@@ -42,11 +42,11 @@ export default function HomePage() {
         <div className="glass-strong rounded-2xl p-7">
           <div className="space-y-6">
             <div className="flex items-center gap-3">
-              <span className="h-2 w-2 rounded-full bg-arena-cyan shadow-glow-cyan animate-arena-pulse" />
+              <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_8px] shadow-emerald-400/60 animate-arena-pulse" />
               <div>
-                <p className="text-sm font-medium">Modo Preview</p>
+                <p className="text-sm font-medium">Panel activo</p>
                 <p className="text-xs text-muted-foreground mt-0.5 font-light">
-                  Configura Supabase para funcionalidad completa
+                  Gestión completa de clientes y proyectos
                 </p>
               </div>
             </div>
@@ -63,16 +63,16 @@ export default function HomePage() {
               ))}
             </div>
 
-            <Link
-              href="/dashboard-preview"
-              className="arena-btn w-full"
-            >
-              Ver Preview
+            <Link href="/login" className="arena-btn w-full">
+              Acceder al Panel
             </Link>
 
-            <p className="text-xs text-center text-muted-foreground font-light">
-              Sigue los pasos en <span className="font-mono text-primary/80">INSTALL.md</span>
-            </p>
+            <Link
+              href="/dashboard-preview"
+              className="block text-center text-xs text-muted-foreground hover:text-primary transition-colors uppercase tracking-wider"
+            >
+              Ver demo sin sesión
+            </Link>
           </div>
         </div>
 

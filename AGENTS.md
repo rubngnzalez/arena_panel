@@ -82,11 +82,13 @@ Replica de la identidad de **arenatrece.com**. **Única fuente de verdad: `src/s
 
 ### ✅ Hecho
 - Arquitectura completa Next.js + Supabase.
-- 5 migraciones SQL (esquema: clientes, servicios, proyectos, tareas, auth/RLS, portal, notificaciones, tickets, documentos, integraciones).
+- 5 migraciones SQL **aplicadas en Arena13** (`cvfelnyalkdjxzzelski`): clientes, servicios, proyectos, tareas, auth/RLS, portal, notificaciones, tickets, documentos, integraciones.
 - Rediseño de marca aplicado a: globals.css, tailwind.config.ts, button/input/badge/card, sidebar, header, login, landing, dashboard.
 - **6 bugs de auditoría resueltos** (ver abajo).
 - Build verificado OK (18 rutas estáticas, export a `./out`).
-- Workflow CI/CD listo para GitHub Pages (consume secrets).
+- Workflow CI/CD **funcionando en GitHub Pages** (deploy automático en push a main).
+- **GitHub**: repo `rubngnzalez/arena_panel` (público), 2 secrets configurados, Pages activado.
+- **Supabase**: credenciales reales en `.env.local`, migraciones aplicadas.
 
 ### 🔧 Bugs resueltos (auditoría)
 1. ✅ **Logout**: botón de cerrar sesión añadido en `sidebar.tsx` (tarjeta de usuario) y `cliente-sidebar.tsx`. Cableado vía `onLogout` desde ambos layouts.
@@ -102,10 +104,19 @@ Replica de la identidad de **arenatrece.com**. **Única fuente de verdad: `src/s
 9. `next.config.js`: `typescript.ignoreBuildErrors: true` oculta errores de tipo.
 10. `next.config.js`: `headers()` se ignora con `output: 'export'` (warnings en build). Para headers reales hace falta Vercel/Netlify/Cloudflare.
 
-## 7. Próximos pasos (pendiente de credenciales)
+## 7. Próximos pasos
 
-1. **GitHub**: la carpeta **no es repo git** todavía. Inicializar, crear repo (¿`arenatrece/panel`?), primer commit + push. Workflow `.github/workflows/deploy.yml` necesita secrets `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
-2. **Supabase**: `.env.local` tiene credenciales placeholder. Al recibir las reales: actualizar `.env.local`, aplicar migraciones (`supabase db push`), crear usuario admin, regenerar tipos.
+1. **DNS custom domain**: añadir CNAME `panel` → `rubngnzalez.github.io` en el proveedor DNS de arenatrece.com. Tras propagar, el panel estará en https://panel.arenatrece.com (GitHub emite certificado HTTPS automáticamente).
+2. **Usuario admin**: crear el primer usuario admin en Supabase Auth + asignar rol `admin` en `perfiles_usuario`.
+3. **Regenerar tipos**: ejecutar `npm run supabase:generate` para que `database.types.ts` refleje el esquema real aplicado (ahora es placeholder).
+4. **ESLint**: crear `.eslintrc.json` base (`next lint` pide prompt interactivo).
+5. **Probar flujo completo** con credenciales reales (login/logout/CRUD).
+
+### CI/CD (GitHub Pages)
+- Repo: `rubngnzalez/arena_panel` (público).
+- URL actual: https://rubngnzalez.github.io/arena_panel/ (hasta que el DNS custom propague).
+- Secrets: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (en GitHub, no en código).
+- Deploy automático en cada push a `main`. También manual vía `workflow_dispatch`.
 
 ## 8. Reglas del proyecto
 
