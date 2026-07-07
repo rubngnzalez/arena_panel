@@ -50,31 +50,31 @@ const navSections: NavSection[] = [
     title: "Principal",
     items: [
       { name: "Dashboard", href: "/dashboard", icon: Home },
-      { name: "Clientes", href: "/dashboard/clientes", icon: Users },
-      { name: "Servicios", href: "/dashboard/servicios", icon: Briefcase },
-      { name: "Proyectos", href: "/dashboard/proyectos", icon: FolderKanban },
+      { name: "Clientes", href: "/clientes", icon: Users },
+      { name: "Servicios", href: "/servicios", icon: Briefcase },
+      { name: "Proyectos", href: "/proyectos", icon: FolderKanban },
     ],
   },
   {
     title: "Gestión",
     items: [
-      { name: "Tickets", href: "/dashboard/tickets", icon: LifeBuoy, feature: "tickets_soporte" },
-      { name: "Documentos", href: "/dashboard/documentos", icon: FileText, feature: "documentos" },
-      { name: "Notificaciones", href: "/dashboard/notificaciones", icon: Bell, feature: "notificaciones" },
+      { name: "Tickets", href: "/tickets", icon: LifeBuoy, feature: "tickets_soporte" },
+      { name: "Documentos", href: "/documentos", icon: FileText, feature: "documentos" },
+      { name: "Notificaciones", href: "/notificaciones", icon: Bell, feature: "notificaciones" },
     ],
   },
   {
     title: "Integraciones",
     items: [
-      { name: "KiloCode", href: "/dashboard/integraciones/kilocode", icon: Code, feature: "kilocode" },
-      { name: "OpenDesign", href: "/dashboard/integraciones/opendesign", icon: Palette, feature: "opendesign" },
+      { name: "KiloCode", href: "/integraciones/kilocode", icon: Code, feature: "kilocode" },
+      { name: "OpenDesign", href: "/integraciones/opendesign", icon: Palette, feature: "opendesign" },
     ],
   },
   {
     title: "Sistema",
     items: [
-      { name: "Funcionalidades", href: "/dashboard/features", icon: Grid3x3 },
-      { name: "Configuración", href: "/dashboard/settings", icon: Settings },
+      { name: "Funcionalidades", href: "/features", icon: Grid3x3 },
+      { name: "Configuración", href: "/settings", icon: Settings },
     ],
   },
 ]

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { useSupabase } from "@/lib/supabase/client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -40,6 +41,7 @@ import { formatRelativeTime } from "@/lib/utils"
 import type { Cliente } from "@/types"
 
 export default function ClientesPage() {
+  const router = useRouter()
   const supabase = useSupabase()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
@@ -49,6 +51,7 @@ export default function ClientesPage() {
   const [estadoFilter, setEstadoFilter] = useState<string>("todos")
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingCliente, setEditingCliente] = useState<Cliente | null>(null)
+  const [formError, setFormError] = useState("")
 
   // Form state
   const [formData, setFormData] = useState({
@@ -105,19 +108,26 @@ export default function ClientesPage() {
     e.preventDefault()
 
     try {
+      setFormError("")
+      const payload = {
+        ...formData,
+        email: formData.email.trim() || null,
+        telefono: formData.telefono.trim() || null,
+        empresa: formData.empresa.trim() || null,
+        notas: formData.notas.trim() || null,
+      }
+
       if (editingCliente) {
-        // Update
         const { error } = await supabase
           .from("clientes")
-          .update(formData)
+          .update(payload)
           .eq("id", editingCliente.id)
 
         if (error) throw error
       } else {
-        // Create
         const { error } = await supabase
           .from("clientes")
-          .insert([formData])
+          .insert([payload])
 
         if (error) throw error
       }
@@ -125,8 +135,16 @@ export default function ClientesPage() {
       setDialogOpen(false)
       resetForm()
       fetchClientes()
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving cliente:", error)
+      const msg = error?.message || ""
+      if (msg.includes("duplicate") || msg.includes("unique")) {
+        setFormError("Ya existe un cliente con ese email.")
+      } else if (msg.includes("rls") || msg.includes("policy")) {
+        setFormError("No tienes permisos para esta acción.")
+      } else {
+        setFormError(msg || "No se pudo guardar el cliente.")
+      }
     }
   }
 
@@ -161,6 +179,7 @@ export default function ClientesPage() {
 
   const resetForm = () => {
     setEditingCliente(null)
+    setFormError("")
     setFormData({
       nombre: "",
       email: "",
@@ -212,6 +231,12 @@ export default function ClientesPage() {
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {formError && (
+                <div className="flex items-start gap-2.5 rounded-pill border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                  <span>{formError}</span>
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2 col-span-2">
                   <Label htmlFor="nombre">Nombre *</Label>
@@ -223,13 +248,12 @@ export default function ClientesPage() {
                   />
                 </div>
                 <div className="space-y-2 col-span-2">
-                  <Label htmlFor="email">Email *</Label>
+                  <Label htmlFor="email">Email</Label>
                   <Input
                     id="email"
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    required
                   />
                 </div>
                 <div className="space-y-2">
@@ -352,7 +376,9 @@ export default function ClientesPage() {
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
-                      <CardTitle className="truncate">{cliente.nombre}</CardTitle>
+                      <CardTitle className="truncate cursor-pointer hover:text-primary transition-colors" onClick={() => router.push(`/clientes/detalle?id=${cliente.id}`)}>
+                        {cliente.nombre}
+                      </CardTitle>
                       {cliente.empresa && (
                         <CardDescription className="flex items-center gap-1 mt-1">
                           <Building className="h-3 w-3" />
@@ -385,6 +411,13 @@ export default function ClientesPage() {
                       variant="outline"
                       size="sm"
                       className="flex-1"
+                      onClick={() => router.push(`/clientes/detalle?id=${cliente.id}`)}
+                    >
+                      Ver ficha
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => handleEdit(cliente)}
                     >
                       <Edit className="h-3 w-3 mr-1" />
