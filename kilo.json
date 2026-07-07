@@ -1,0 +1,27 @@
+{
+  "$schema": "https://app.kilo.ai/config.json",
+  "permission": {
+    "bash": "allow",
+    "read": "allow",
+    "glob": "allow",
+    "grep": "allow",
+    "list": "allow",
+    "edit": {
+      ".env.local": "deny",
+      ".env": "deny",
+      "**/.env*": "deny",
+      "src/**": "allow",
+      "supabase/**": "allow",
+      "public/**": "allow",
+      ".kilo/**": "allow",
+      "AGENTS.md": "allow",
+      "*.md": "allow",
+      "*.ts": "allow",
+      "*.tsx": "allow",
+      "*.js": "allow",
+      "*.json": "allow",
+      "*": "ask"
+    },
+    "external_directory": "ask"
+  }
+}

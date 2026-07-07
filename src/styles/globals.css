@@ -1,0 +1,309 @@
+/**
+ * Arena13 Panel — Sistema de diseño oficial
+ * Identidad visual alineada con arenatrece.com
+ * Negro puro · Gradiente púrpura→cian · Liquid Glass · Pills
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* ── Marca Arena13 ── */
+    --arena-black: #000000;
+    --arena-white: #ffffff;
+    --arena-purple: #787dff; /* HSL ~238 100% 75% */
+    --arena-cyan: #01a9f2; /* HSL ~198 98% 48% */
+    --arena-purple-hsl: 238 100% 75%;
+    --arena-cyan-hsl: 198 98% 48%;
+
+    /* ── Tokens shadcn (HSL) ── */
+    --background: 0 0% 0%; /* negro puro */
+    --foreground: 0 0% 100%;
+    --card: 0 0% 4%; /* #0a0a0a */
+    --card-foreground: 0 0% 100%;
+    --popover: 0 0% 4%;
+    --popover-foreground: 0 0% 100%;
+    --primary: var(--arena-purple-hsl);
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 9%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 0 0% 9%;
+    --muted-foreground: 0 0% 55%;
+    --accent: var(--arena-cyan-hsl);
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 16%; /* bordes sutiles */
+    --input: 0 0% 16%;
+    --ring: var(--arena-purple-hsl);
+    --radius: 0.75rem;
+
+    /* ── Gradiente de marca ── */
+    --arena-gradient: linear-gradient(90deg, #01a9f2, #787dff);
+    --arena-gradient-rev: linear-gradient(90deg, #787dff, #01a9f2);
+    --arena-glow-purple: 0 0 24px rgba(120, 125, 255, 0.35);
+    --arena-glow-cyan: 0 0 24px rgba(1, 169, 242, 0.3);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply text-foreground antialiased;
+    background-color: #000;
+    color: #fafafa;
+    font-family: "Inter", system-ui, -apple-system, sans-serif;
+    font-weight: 300;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Fondo orgánico de marca (fallback estático del WebGL de arenatrece.com) */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-color: #000;
+    background-image: radial-gradient(
+        circle at 80% 15%,
+        rgba(120, 125, 255, 0.14) 0%,
+        transparent 45%
+      ),
+      radial-gradient(
+        circle at 15% 85%,
+        rgba(1, 169, 242, 0.12) 0%,
+        transparent 45%
+      ),
+      radial-gradient(
+        circle at 50% 50%,
+        rgba(120, 125, 255, 0.04) 0%,
+        transparent 60%
+      );
+  }
+
+  /* Tipografía display para titulares grandes */
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.02em;
+  }
+
+  /* Scrollbar con gradiente de marca */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #787dff, #01a9f2);
+    border-radius: 999px;
+  }
+
+  ::selection {
+    background: rgba(120, 125, 255, 0.35);
+    color: #fff;
+  }
+}
+
+@layer components {
+  /* ── Liquid Glass (efecto característico de arenatrece.com) ── */
+  .glass {
+    background: rgba(10, 10, 14, 0.45);
+    backdrop-filter: blur(22px) saturate(160%);
+    -webkit-backdrop-filter: blur(22px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .glass-strong {
+    background: rgba(10, 10, 14, 0.7);
+    backdrop-filter: blur(22px) saturate(160%);
+    -webkit-backdrop-filter: blur(22px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06),
+      inset 0 0 0 1px rgba(120, 125, 255, 0.04);
+  }
+
+  /* Card Arena13 (glass + pill suave) */
+  .arena-card {
+    @apply glass rounded-2xl p-6;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease,
+      transform 0.3s ease;
+  }
+  .arena-card:hover {
+    border-color: rgba(120, 125, 255, 0.35);
+    box-shadow: var(--arena-glow-purple), 0 8px 32px rgba(0, 0, 0, 0.55);
+    transform: translateY(-2px);
+  }
+
+  /* Botón gradiente de marca */
+  .arena-btn {
+    @apply relative inline-flex items-center justify-center gap-2 px-5 py-2.5;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #fff;
+    background: var(--arena-gradient);
+    background-size: 150% 100%;
+    box-shadow: var(--arena-glow-purple);
+    transition: background-position 0.4s ease, transform 0.25s ease,
+      box-shadow 0.3s ease;
+  }
+  .arena-btn:hover {
+    background-position: 100% 0;
+    transform: scale(1.03);
+    box-shadow: 0 0 32px rgba(120, 125, 255, 0.55);
+  }
+
+  /* Botón outline glass */
+  .arena-btn-outline {
+    @apply relative inline-flex items-center justify-center gap-2 px-5 py-2.5;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #fff;
+    background: rgba(10, 10, 14, 0.6);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    transition: all 0.25s ease;
+  }
+  .arena-btn-outline:hover {
+    border-color: rgba(120, 125, 255, 0.5);
+    box-shadow: var(--arena-glow-purple);
+  }
+
+  /* Input con focus gradiente */
+  .arena-input {
+    @apply w-full bg-transparent px-4 py-2.5;
+    border-radius: 999px;
+    border: 1px solid hsl(var(--border));
+    color: #fafafa;
+    font-size: 0.875rem;
+    transition: all 0.25s ease;
+  }
+  .arena-input::placeholder {
+    color: hsl(var(--muted-foreground));
+  }
+  .arena-input:focus {
+    outline: none;
+    border-color: var(--arena-purple);
+    box-shadow: 0 0 0 3px rgba(120, 125, 255, 0.15),
+      var(--arena-glow-purple);
+  }
+
+  /* Badge minimalista */
+  .arena-badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  /* Texto con gradiente de marca */
+  .text-gradient {
+    background: var(--arena-gradient-rev);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+
+  /* Borde con gradiente */
+  .border-gradient {
+    position: relative;
+  }
+  .border-gradient::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: var(--arena-gradient);
+    -webkit-mask: linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  /* Grid pattern sutil con marca */
+  .bg-grid {
+    background-image: linear-gradient(
+        to right,
+        rgba(120, 125, 255, 0.04) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        to bottom,
+        rgba(120, 125, 255, 0.04) 1px,
+        transparent 1px
+      );
+    background-size: 48px 48px;
+  }
+
+  /* Container */
+  .arena-container {
+    @apply max-w-7xl mx-auto px-6 lg:px-8;
+  }
+
+  /* Lead / texto secundario */
+  .arena-lead {
+    @apply text-lg font-light;
+    color: rgba(250, 250, 250, 0.6);
+  }
+
+  /* Header minimalista */
+  .arena-header {
+    @apply flex items-center justify-between;
+    @apply py-6 lg:py-8;
+    @apply border-b border-border;
+  }
+
+  /* Glow suave para elementos activos */
+  .glow-purple {
+    box-shadow: var(--arena-glow-purple);
+  }
+  .glow-cyan {
+    box-shadow: var(--arena-glow-cyan);
+  }
+}
+
+/* Transición base */
+.transition-base {
+  @apply transition-all duration-300 ease-out;
+}
+
+/* Animación de respiración para el gradiente */
+@keyframes arena-pulse {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.animate-arena-pulse {
+  animation: arena-pulse 3s ease-in-out infinite;
+}
