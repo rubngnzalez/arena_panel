@@ -16,7 +16,7 @@ export interface User {
 export interface Cliente {
   id: string
   nombre: string
-  email: string
+  email?: string
   telefono?: string
   empresa?: string
   estado: 'activo' | 'inactivo' | 'potencial'
@@ -26,6 +26,95 @@ export interface Cliente {
   updated_at: string
   servicios?: ClienteServicio[]
   proyectos?: Proyecto[]
+  // Campos ampliados
+  logo_url?: string
+  fecha_captacion?: string
+  sector?: string
+  web?: string
+  direccion?: string
+  ciudad?: string
+  codigo_postal?: string
+  descripcion?: string
+  // Identidad visual
+  color_primario?: string
+  color_secundario?: string
+  color_acento?: string
+  fuente_principal?: string
+  fuente_secundaria?: string
+  descripcion_marca?: string
+  // Redes sociales
+  instagram?: string
+  linkedin?: string
+  facebook?: string
+}
+
+// Documento/material del cliente (descargable)
+export type TipoDocumento =
+  | 'logo'
+  | 'manual_marca'
+  | 'fuentes'
+  | 'colores'
+  | 'paleta'
+  | 'presentacion'
+  | 'contrato'
+  | 'factura'
+  | 'otro'
+
+export interface ClienteDocumento {
+  id: string
+  cliente_id: string
+  tipo: TipoDocumento
+  titulo: string
+  descripcion?: string
+  nombre_archivo: string
+  storage_path: string
+  mime_type?: string
+  tamano_bytes?: number
+  es_publico: boolean
+  created_by?: string
+  created_at: string
+  updated_at: string
+}
+
+// Trabajo realizado o presupuestado
+export type TipoServicioTrabajo =
+  | 'imagen_marca'
+  | 'web'
+  | 'redes_sociales'
+  | 'sem'
+  | 'seo'
+  | 'diseno_grafico'
+  | 'contenido'
+  | 'fotografia'
+  | 'video'
+  | 'consultoria'
+  | 'automatizacion'
+  | 'ia'
+  | 'otro'
+
+export type EstadoTrabajo =
+  | 'presupuestado'
+  | 'aprobado'
+  | 'en_proceso'
+  | 'completado'
+  | 'facturado'
+  | 'cancelado'
+
+export interface Trabajo {
+  id: string
+  cliente_id: string
+  fecha: string
+  tipo_servicio: TipoServicioTrabajo
+  titulo: string
+  descripcion?: string
+  coste: number
+  estado: EstadoTrabajo
+  fecha_factura?: string
+  num_factura?: string
+  notas?: string
+  created_by?: string
+  created_at: string
+  updated_at: string
 }
 
 // Servicio (catálogo)
@@ -77,13 +166,28 @@ export interface Proyecto {
   created_at: string
   updated_at: string
   tareas?: Tarea[]
+  // Campos pipeline
+  linea_negocio?: 'ia' | 'diseno' | 'mixto'
+  checklist?: ChecklistItem[]
+  figma_url?: string
+  github_url?: string
+  webflow_url?: string
+  drive_url?: string
+  notas_internas?: string
 }
 
 export type ProyectoEstado =
   | 'planeacion'
   | 'en_progreso'
+  | 'bloqueado'
   | 'revision'
   | 'completado'
+
+export interface ChecklistItem {
+  id: string
+  text: string
+  done: boolean
+}
 
 // Tarea
 export interface Tarea {

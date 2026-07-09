@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSupabase } from "@/lib/supabase/client"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -32,13 +32,17 @@ import {
   Phone,
   Building,
   Calendar,
-  MoreVertical,
-  Edit,
-  Trash2,
   AlertCircle,
+  ArrowRight,
 } from "lucide-react"
-import { formatRelativeTime } from "@/lib/utils"
+import { formatDate, formatRelativeTime, getInitials } from "@/lib/utils"
 import type { Cliente } from "@/types"
+
+const ESTADO_BADGES: Record<Cliente["estado"], { label: string; variant: any }> = {
+  activo: { label: "Activo", variant: "success" },
+  inactivo: { label: "Inactivo", variant: "secondary" },
+  potencial: { label: "Potencial", variant: "outline" },
+}
 
 export default function ClientesPage() {
   const router = useRouter()
@@ -50,16 +54,15 @@ export default function ClientesPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [estadoFilter, setEstadoFilter] = useState<string>("todos")
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [editingCliente, setEditingCliente] = useState<Cliente | null>(null)
   const [formError, setFormError] = useState("")
 
-  // Form state
   const [formData, setFormData] = useState({
     nombre: "",
     email: "",
     telefono: "",
     empresa: "",
     estado: "potencial" as Cliente["estado"],
+    fecha_captacion: "",
     notas: "",
   })
 
@@ -68,21 +71,19 @@ export default function ClientesPage() {
   }, [supabase])
 
   useEffect(() => {
-    // Filtrar clientes
     let filtered = clientes
-
     if (searchTerm) {
+      const q = searchTerm.toLowerCase()
       filtered = filtered.filter(c =>
-        c.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.empresa?.toLowerCase().includes(searchTerm.toLowerCase())
+        c.nombre?.toLowerCase().includes(q) ||
+        c.email?.toLowerCase().includes(q) ||
+        c.empresa?.toLowerCase().includes(q) ||
+        c.telefono?.toLowerCase().includes(q)
       )
     }
-
     if (estadoFilter !== "todos") {
       filtered = filtered.filter(c => c.estado === estadoFilter)
     }
-
     setFilteredClientes(filtered)
   }, [clientes, searchTerm, estadoFilter])
 
@@ -93,12 +94,11 @@ export default function ClientesPage() {
         .from("clientes")
         .select("*")
         .order("created_at", { ascending: false })
-
       if (error) throw error
-      setClientes(data || [])
+      setClientes((data || []) as Cliente[])
     } catch (err) {
       console.error("Error fetching clientes:", err)
-      setError("No se pudieron cargar los clientes. Comprueba la conexión con la base de datos.")
+      setError("No se pudieron cargar los clientes.")
     } finally {
       setLoading(false)
     }
@@ -106,31 +106,19 @@ export default function ClientesPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
     try {
       setFormError("")
       const payload = {
-        ...formData,
+        nombre: formData.nombre.trim(),
         email: formData.email.trim() || null,
         telefono: formData.telefono.trim() || null,
         empresa: formData.empresa.trim() || null,
+        estado: formData.estado,
+        fecha_captacion: formData.fecha_captacion || null,
         notas: formData.notas.trim() || null,
       }
-
-      if (editingCliente) {
-        const { error } = await supabase
-          .from("clientes")
-          .update(payload)
-          .eq("id", editingCliente.id)
-
-        if (error) throw error
-      } else {
-        const { error } = await supabase
-          .from("clientes")
-          .insert([payload])
-
-        if (error) throw error
-      }
+      const { error } = await supabase.from("clientes").insert([payload])
+      if (error) throw error
 
       setDialogOpen(false)
       resetForm()
@@ -140,7 +128,7 @@ export default function ClientesPage() {
       const msg = error?.message || ""
       if (msg.includes("duplicate") || msg.includes("unique")) {
         setFormError("Ya existe un cliente con ese email.")
-      } else if (msg.includes("rls") || msg.includes("policy")) {
+      } else if (msg.includes("policy") || msg.includes("security")) {
         setFormError("No tienes permisos para esta acción.")
       } else {
         setFormError(msg || "No se pudo guardar el cliente.")
@@ -148,28 +136,10 @@ export default function ClientesPage() {
     }
   }
 
-  const handleEdit = (cliente: Cliente) => {
-    setEditingCliente(cliente)
-    setFormData({
-      nombre: cliente.nombre,
-      email: cliente.email,
-      telefono: cliente.telefono || "",
-      empresa: cliente.empresa || "",
-      estado: cliente.estado,
-      notas: cliente.notas || "",
-    })
-    setDialogOpen(true)
-  }
-
-  const handleDelete = async (id: string) => {
-    if (!confirm("¿Estás seguro de eliminar este cliente?")) return
-
+  const handleDelete = async (id: string, nombre: string) => {
+    if (!confirm(`¿Eliminar a "${nombre}"? Esta acción no se puede deshacer.`)) return
     try {
-      const { error } = await supabase
-        .from("clientes")
-        .delete()
-        .eq("id", id)
-
+      const { error } = await supabase.from("clientes").delete().eq("id", id)
       if (error) throw error
       fetchClientes()
     } catch (error) {
@@ -178,25 +148,15 @@ export default function ClientesPage() {
   }
 
   const resetForm = () => {
-    setEditingCliente(null)
     setFormError("")
     setFormData({
-      nombre: "",
-      email: "",
-      telefono: "",
-      empresa: "",
-      estado: "potencial",
-      notas: "",
+      nombre: "", email: "", telefono: "", empresa: "",
+      estado: "potencial", fecha_captacion: "", notas: "",
     })
   }
 
-  const getEstadoBadge = (estado: Cliente["estado"]) => {
-    const badges: Record<Cliente["estado"], { label: string; variant: any }> = {
-      activo: { label: "Activo", variant: "success" },
-      inactivo: { label: "Inactivo", variant: "secondary" },
-      potencial: { label: "Potencial", variant: "outline" },
-    }
-    return badges[estado]
+  const abrirFicha = (id: string) => {
+    router.push(`/clientes/detalle?id=${id}`)
   }
 
   return (
@@ -205,9 +165,7 @@ export default function ClientesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Clientes</h1>
-          <p className="text-muted-foreground">
-            Gestiona tu cartera de clientes
-          </p>
+          <p className="text-muted-foreground">Gestiona tu cartera de clientes</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={(open) => {
           setDialogOpen(open)
@@ -215,20 +173,13 @@ export default function ClientesPage() {
         }}>
           <DialogTrigger asChild>
             <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Nuevo Cliente
+              <Plus className="h-4 w-4 mr-2" /> Nuevo Cliente
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>
-                {editingCliente ? "Editar Cliente" : "Nuevo Cliente"}
-              </DialogTitle>
-              <DialogDescription>
-                {editingCliente
-                  ? "Actualiza la información del cliente"
-                  : "Añade un nuevo cliente a tu cartera"}
-              </DialogDescription>
+              <DialogTitle>Nuevo Cliente</DialogTitle>
+              <DialogDescription>Añade un nuevo cliente a tu cartera</DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               {formError && (
@@ -240,48 +191,30 @@ export default function ClientesPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2 col-span-2">
                   <Label htmlFor="nombre">Nombre *</Label>
-                  <Input
-                    id="nombre"
-                    value={formData.nombre}
+                  <Input id="nombre" value={formData.nombre}
                     onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                    required
-                  />
+                    required autoFocus />
                 </div>
                 <div className="space-y-2 col-span-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  />
+                  <Input id="email" type="email" value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="telefono">Teléfono</Label>
-                  <Input
-                    id="telefono"
-                    type="tel"
-                    value={formData.telefono}
-                    onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-                  />
+                  <Input id="telefono" type="tel" value={formData.telefono}
+                    onChange={(e) => setFormData({ ...formData, telefono: e.target.value })} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="empresa">Empresa</Label>
-                  <Input
-                    id="empresa"
-                    value={formData.empresa}
-                    onChange={(e) => setFormData({ ...formData, empresa: e.target.value })}
-                  />
+                  <Input id="empresa" value={formData.empresa}
+                    onChange={(e) => setFormData({ ...formData, empresa: e.target.value })} />
                 </div>
-                <div className="space-y-2 col-span-2">
+                <div className="space-y-2">
                   <Label htmlFor="estado">Estado</Label>
-                  <Select
-                    value={formData.estado}
-                    onValueChange={(value: any) => setFormData({ ...formData, estado: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
+                  <Select value={formData.estado}
+                    onValueChange={(value: any) => setFormData({ ...formData, estado: value })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="potencial">Potencial</SelectItem>
                       <SelectItem value="activo">Activo</SelectItem>
@@ -289,41 +222,37 @@ export default function ClientesPage() {
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="fecha_captacion">Fecha de captación</Label>
+                  <Input id="fecha_captacion" type="date" value={formData.fecha_captacion}
+                    onChange={(e) => setFormData({ ...formData, fecha_captacion: e.target.value })} />
+                </div>
                 <div className="space-y-2 col-span-2">
                   <Label htmlFor="notas">Notas</Label>
-                  <Input
-                    id="notas"
-                    value={formData.notas}
+                  <Input id="notas" value={formData.notas}
                     onChange={(e) => setFormData({ ...formData, notas: e.target.value })}
-                    placeholder="Notas internas sobre el cliente..."
-                  />
+                    placeholder="Notas internas sobre el cliente..." />
                 </div>
               </div>
               <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button type="submit">
-                  {editingCliente ? "Actualizar" : "Crear"} Cliente
-                </Button>
+                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
+                <Button type="submit">Crear Cliente</Button>
               </div>
             </form>
           </DialogContent>
         </Dialog>
       </div>
 
-      {/* Filters */}
+      {/* Filtros */}
       <Card>
         <CardContent className="pt-6">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por nombre, email o empresa..."
+              <Input placeholder="Buscar por nombre, email, empresa o teléfono..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+                className="pl-10" />
             </div>
             <Select value={estadoFilter} onValueChange={setEstadoFilter}>
               <SelectTrigger className="w-full sm:w-[180px]">
@@ -341,7 +270,7 @@ export default function ClientesPage() {
         </CardContent>
       </Card>
 
-      {/* Clientes List */}
+      {/* Lista de clientes */}
       {loading ? (
         <div className="flex items-center justify-center h-64">
           <div className="h-8 w-8 rounded-pill border-2 border-white/10 border-t-primary animate-spin" />
@@ -351,9 +280,7 @@ export default function ClientesPage() {
           <CardContent className="flex flex-col items-center justify-center py-12">
             <AlertCircle className="h-12 w-12 text-destructive mb-4" />
             <p className="text-muted-foreground mb-4 text-center max-w-md">{error}</p>
-            <Button variant="outline" onClick={() => { setLoading(true); fetchClientes() }}>
-              Reintentar
-            </Button>
+            <Button variant="outline" onClick={() => { setLoading(true); fetchClientes() }}>Reintentar</Button>
           </CardContent>
         </Card>
       ) : filteredClientes.length === 0 ? (
@@ -368,75 +295,93 @@ export default function ClientesPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredClientes.map((cliente) => {
-            const estadoBadge = getEstadoBadge(cliente.estado)
-            return (
-              <Card key={cliente.id} className="hover:border-primary/30 transition-colors">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <CardTitle className="truncate cursor-pointer hover:text-primary transition-colors" onClick={() => router.push(`/clientes/detalle?id=${cliente.id}`)}>
-                        {cliente.nombre}
-                      </CardTitle>
-                      {cliente.empresa && (
-                        <CardDescription className="flex items-center gap-1 mt-1">
-                          <Building className="h-3 w-3" />
-                          {cliente.empresa}
-                        </CardDescription>
-                      )}
-                    </div>
-                    <Badge variant={estadoBadge.variant}>{estadoBadge.label}</Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Mail className="h-4 w-4" />
-                      <span className="truncate">{cliente.email}</span>
-                    </div>
-                    {cliente.telefono && (
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Phone className="h-4 w-4" />
-                        <span>{cliente.telefono}</span>
+        <div className="rounded-lg border border-white/5 overflow-hidden">
+          {/* Header de la tabla (desktop) */}
+          <div className="hidden md:grid grid-cols-[auto_1fr_1fr_auto_auto_auto] gap-4 px-4 py-3 bg-white/[0.02] border-b border-white/5 text-xs uppercase tracking-wider text-muted-foreground">
+            <div className="w-10" />
+            <div>Cliente</div>
+            <div>Contacto</div>
+            <div>Estado</div>
+            <div>Cliente desde</div>
+            <div className="w-10" />
+          </div>
+
+          {/* Filas */}
+          <div className="divide-y divide-white/5">
+            {filteredClientes.map((cliente) => {
+              const estadoBadge = ESTADO_BADGES[cliente.estado] || ESTADO_BADGES.potencial
+              return (
+                <div
+                  key={cliente.id}
+                  className="grid grid-cols-[auto_1fr_auto] md:grid-cols-[auto_1fr_1fr_auto_auto_auto] gap-3 md:gap-4 items-center px-4 py-3 hover:bg-white/[0.03] transition-colors cursor-pointer group"
+                  onClick={() => abrirFicha(cliente.id)}
+                >
+                  {/* Avatar / Logo */}
+                  <div className="w-10 h-10 shrink-0">
+                    {cliente.logo_url ? (
+                      <img src={cliente.logo_url} alt={cliente.nombre}
+                        className="w-10 h-10 rounded-lg object-cover border border-white/10" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-lg bg-arena-gradient flex items-center justify-center">
+                        <span className="text-xs font-semibold text-white">{getInitials(cliente.nombre)}</span>
                       </div>
                     )}
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Calendar className="h-4 w-4" />
-                      <span>{formatRelativeTime(cliente.created_at)}</span>
-                    </div>
                   </div>
-                  <div className="flex gap-2 pt-2 border-t border-white/10">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => router.push(`/clientes/detalle?id=${cliente.id}`)}
-                    >
-                      Ver ficha
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleEdit(cliente)}
-                    >
-                      <Edit className="h-3 w-3 mr-1" />
-                      Editar
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-destructive hover:text-destructive"
-                      onClick={() => handleDelete(cliente.id)}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
+
+                  {/* Nombre + empresa */}
+                  <div className="min-w-0">
+                    <p className="font-medium truncate group-hover:text-primary transition-colors">{cliente.nombre}</p>
+                    {cliente.empresa && (
+                      <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
+                        <Building className="h-3 w-3" /> {cliente.empresa}
+                      </p>
+                    )}
                   </div>
-                </CardContent>
-              </Card>
-            )
-          })}
+
+                  {/* Contacto */}
+                  <div className="hidden md:block min-w-0 space-y-0.5">
+                    {cliente.email ? (
+                      <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
+                        <Mail className="h-3 w-3" /> {cliente.email}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-muted-foreground/50">Sin email</p>
+                    )}
+                    {cliente.telefono && (
+                      <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
+                        <Phone className="h-3 w-3" /> {cliente.telefono}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Estado */}
+                  <div className="hidden md:block">
+                    <Badge variant={estadoBadge.variant}>{estadoBadge.label}</Badge>
+                  </div>
+
+                  {/* Fecha */}
+                  <div className="hidden md:flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Calendar className="h-3 w-3" />
+                    {cliente.fecha_captacion ? formatDate(cliente.fecha_captacion) : formatRelativeTime(cliente.created_at)}
+                  </div>
+
+                  {/* Acción */}
+                  <div className="flex items-center justify-end">
+                    <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
+      )}
+
+      {/* Contador */}
+      {!loading && !error && filteredClientes.length > 0 && (
+        <p className="text-xs text-muted-foreground text-center">
+          {filteredClientes.length} cliente{filteredClientes.length !== 1 ? "s" : ""}
+          {filteredClientes.length !== clientes.length && ` de ${clientes.length}`}
+        </p>
       )}
     </div>
   )

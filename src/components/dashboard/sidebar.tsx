@@ -1,10 +1,12 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { isFeatureEnabled } from "@/lib/features"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
+import { getPanelConfig, type PanelConfig } from "@/lib/panel-config"
 import {
   Home,
   Users,
@@ -19,6 +21,7 @@ import {
   X,
   Grid3x3,
   LogOut,
+  Layers,
 } from "lucide-react"
 
 interface NavItem {
@@ -51,6 +54,7 @@ const navSections: NavSection[] = [
     items: [
       { name: "Dashboard", href: "/dashboard", icon: Home },
       { name: "Clientes", href: "/clientes", icon: Users },
+      { name: "Pipeline", href: "/pipeline", icon: Layers },
       { name: "Servicios", href: "/servicios", icon: Briefcase },
       { name: "Proyectos", href: "/proyectos", icon: FolderKanban },
     ],
@@ -81,6 +85,16 @@ const navSections: NavSection[] = [
 
 export function Sidebar({ user, unreadNotifications = 0, onCloseMobile, onLogout, isMobile = false }: SidebarProps) {
   const pathname = usePathname()
+  const [panelConfig, setPanelConfig] = useState<PanelConfig>({})
+
+  useEffect(() => {
+    setPanelConfig(getPanelConfig())
+    const handler = () => setPanelConfig(getPanelConfig())
+    window.addEventListener("panel-config-changed", handler)
+    return () => window.removeEventListener("panel-config-changed", handler)
+  }, [])
+
+  const panelNombre = panelConfig.nombrePanel || "Arena13"
 
   const filteredSections = navSections.map(section => ({
     ...section,
@@ -105,11 +119,19 @@ export function Sidebar({ user, unreadNotifications = 0, onCloseMobile, onLogout
         isMobile && "flex items-center justify-between"
       )}>
         <Link href="/dashboard" className="flex items-center gap-2.5">
-          <span className="relative flex h-9 w-9 items-center justify-center rounded-pill bg-arena-gradient shadow-glow-purple">
-            <span className="text-sm font-semibold text-white">A</span>
-          </span>
+          {panelConfig.logoUrl ? (
+            <img src={panelConfig.logoUrl} alt={panelNombre} className="h-9 w-9 rounded-pill object-cover" />
+          ) : (
+            <span className="relative flex h-9 w-9 items-center justify-center rounded-pill bg-arena-gradient shadow-glow-purple">
+              <span className="text-sm font-semibold text-white">{panelNombre.charAt(0).toUpperCase()}</span>
+            </span>
+          )}
           <div className="leading-none">
-            <span className="block text-base font-medium tracking-tight">Arena<span className="text-gradient">13</span></span>
+            <span className="block text-base font-medium tracking-tight">
+              {panelNombre.includes("13") ? (
+                <>Arena<span className="text-gradient">13</span></>
+              ) : panelNombre}
+            </span>
             <span className="block text-[0.65rem] font-light text-muted-foreground tracking-widest2 uppercase mt-0.5">Panel</span>
           </div>
         </Link>

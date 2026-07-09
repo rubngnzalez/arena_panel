@@ -59,35 +59,34 @@
 
   body {
     @apply text-foreground antialiased;
-    background-color: #000;
-    color: #fafafa;
+    background-color: var(--theme-bg, #000000);
+    color: hsl(var(--foreground));
     font-family: "Inter", system-ui, -apple-system, sans-serif;
     font-weight: 300;
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
   }
 
-  /* Fondo orgánico de marca (fallback estático del WebGL de arenatrece.com) */
   body::before {
     content: "";
     position: fixed;
     inset: 0;
     z-index: -1;
     pointer-events: none;
-    background-color: #000;
+    background-color: var(--theme-bg, #000000);
     background-image: radial-gradient(
         circle at 80% 15%,
-        rgba(120, 125, 255, 0.14) 0%,
+        var(--theme-glow-1, rgba(120, 125, 255, 0.14)) 0%,
         transparent 45%
       ),
       radial-gradient(
         circle at 15% 85%,
-        rgba(1, 169, 242, 0.12) 0%,
+        var(--theme-glow-2, rgba(1, 169, 242, 0.12)) 0%,
         transparent 45%
       ),
       radial-gradient(
         circle at 50% 50%,
-        rgba(120, 125, 255, 0.04) 0%,
+        var(--theme-glow-3, rgba(120, 125, 255, 0.04)) 0%,
         transparent 60%
       );
   }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,18 +15,16 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import {
-  Database,
-  Rocket,
-  Globe,
-  HelpCircle,
-  Copy,
-  Check,
-  Save,
-  RefreshCw,
+  Database, Rocket, Globe, HelpCircle, Copy, Check, Save, RefreshCw,
+  Palette, Upload, CheckCircle2,
 } from "lucide-react"
 import { getSupabaseConfig, getPanelUrl } from "@/lib/supabase/config"
+import { THEMES, getThemeById, getStoredThemeId, setTheme as applyThemeId } from "@/lib/themes"
+import { getPanelConfig, savePanelConfig } from "@/lib/panel-config"
+import { useSupabase } from "@/lib/supabase/client"
 
 export default function SettingsPage() {
+  const supabase = useSupabase()
   const [supabaseUrl, setSupabaseUrl] = useState("")
   const [supabaseKey, setSupabaseKey] = useState("")
   const [environment, setEnvironment] = useState<"local" | "produccion">("local")
@@ -34,13 +32,85 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false)
   const [dnsDialogOpen, setDnsDialogOpen] = useState(false)
 
+  // Appearance
+  const [currentThemeId, setCurrentThemeId] = useState(getStoredThemeId())
+  const [panelCfg, setPanelCfg] = useState({ titulo: "", nombrePanel: "", logoUrl: "", faviconUrl: "" })
+  const [uploadingLogo, setUploadingLogo] = useState(false)
+  const [uploadingFavicon, setUploadingFavicon] = useState(false)
+  const [cfgSaved, setCfgSaved] = useState(false)
+  const logoRef = useRef<HTMLInputElement>(null)
+  const faviconRef = useRef<HTMLInputElement>(null)
+
   useEffect(() => {
-    // Cargar configuración actual
     const config = getSupabaseConfig()
     setSupabaseUrl(config.url)
     setSupabaseKey(config.anonKey)
     setEnvironment(config.environment)
+
+    const pc = getPanelConfig()
+    setPanelCfg({
+      titulo: pc.titulo || "",
+      nombrePanel: pc.nombrePanel || "",
+      logoUrl: pc.logoUrl || "",
+      faviconUrl: pc.faviconUrl || "",
+    })
   }, [])
+
+  const handleThemeChange = (themeId: string) => {
+    setCurrentThemeId(themeId)
+    applyThemeId(themeId)
+  }
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadingLogo(true)
+    try {
+      const path = `panel/logo_${Date.now()}.${file.name.split(".").pop()}`
+      const { error } = await supabase.storage.from("cliente-docs").upload(path, file, { upsert: true })
+      if (error) throw error
+      const { data } = supabase.storage.from("cliente-docs").getPublicUrl(path)
+      setPanelCfg({ ...panelCfg, logoUrl: data.publicUrl })
+    } catch (err) {
+      console.error("Error:", err)
+      alert("No se pudo subir el logo.")
+    } finally {
+      setUploadingLogo(false)
+      if (logoRef.current) logoRef.current.value = ""
+    }
+  }
+
+  const handleFaviconUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadingFavicon(true)
+    try {
+      const path = `panel/favicon_${Date.now()}.${file.name.split(".").pop()}`
+      const { error } = await supabase.storage.from("cliente-docs").upload(path, file, { upsert: true })
+      if (error) throw error
+      const { data } = supabase.storage.from("cliente-docs").getPublicUrl(path)
+      setPanelCfg({ ...panelCfg, faviconUrl: data.publicUrl })
+    } catch (err) {
+      console.error("Error:", err)
+      alert("No se pudo subir el favicon.")
+    } finally {
+      setUploadingFavicon(false)
+      if (faviconRef.current) faviconRef.current.value = ""
+    }
+  }
+
+  const handleSavePanelCfg = () => {
+    const config = {
+      titulo: panelCfg.titulo.trim() || undefined,
+      nombrePanel: panelCfg.nombrePanel.trim() || undefined,
+      logoUrl: panelCfg.logoUrl || undefined,
+      faviconUrl: panelCfg.faviconUrl || undefined,
+    }
+    savePanelConfig(config)
+    window.dispatchEvent(new Event("panel-config-changed"))
+    setCfgSaved(true)
+    setTimeout(() => setCfgSaved(false), 2500)
+  }
 
   const handleSaveConfig = async () => {
     setSaving(true)
@@ -77,6 +147,125 @@ export default function SettingsPage() {
           Gestiona la configuración del panel y despliegues
         </p>
       </div>
+
+      {/* Apariencia */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-purple-500/20 rounded-lg">
+              <Palette className="h-5 w-5 text-purple-400" />
+            </div>
+            <div>
+              <CardTitle>Apariencia y Marca</CardTitle>
+              <CardDescription>Personaliza el panel con tu identidad visual</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Selector de temas */}
+          <div>
+            <Label className="mb-3 block">Tema del panel</Label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {THEMES.map((theme) => {
+                const isSelected = theme.id === currentThemeId
+                return (
+                  <button
+                    key={theme.id}
+                    onClick={() => handleThemeChange(theme.id)}
+                    className={`relative rounded-xl border-2 p-3 text-left transition-all ${
+                      isSelected ? "border-primary" : "border-white/10 hover:border-white/30"
+                    }`}
+                  >
+                    {isSelected && (
+                      <span className="absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-white" />
+                      </span>
+                    )}
+                    <div className="flex gap-1.5 mb-2">
+                      <div className="h-8 w-8 rounded-lg" style={{ backgroundColor: theme.bgSolid }} />
+                      <div className="h-8 w-8 rounded-lg" style={{ background: theme.gradient }} />
+                    </div>
+                    <p className="text-sm font-medium">{theme.name}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{theme.description}</p>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Logo y favicon */}
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Logo del panel</Label>
+              <div className="flex items-center gap-3">
+                <input ref={logoRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
+                {panelCfg.logoUrl ? (
+                  <img src={panelCfg.logoUrl} alt="Logo" className="h-12 w-12 rounded-lg object-cover border border-white/10" />
+                ) : (
+                  <div className="h-12 w-12 rounded-lg bg-arena-gradient flex items-center justify-center">
+                    <span className="text-sm font-semibold text-white">A</span>
+                  </div>
+                )}
+                <Button variant="outline" size="sm" onClick={() => logoRef.current?.click()} disabled={uploadingLogo}>
+                  {uploadingLogo ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
+                  {uploadingLogo ? "Subiendo..." : "Subir logo"}
+                </Button>
+                {panelCfg.logoUrl && (
+                  <Button variant="ghost" size="sm" onClick={() => setPanelCfg({ ...panelCfg, logoUrl: "" })}>
+                    Quitar
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Favicon</Label>
+              <div className="flex items-center gap-3">
+                <input ref={faviconRef} type="file" accept="image/*,.ico" className="hidden" onChange={handleFaviconUpload} />
+                {panelCfg.faviconUrl ? (
+                  <img src={panelCfg.faviconUrl} alt="Favicon" className="h-8 w-8 rounded border border-white/10" />
+                ) : (
+                  <div className="h-8 w-8 rounded border border-white/10 flex items-center justify-center text-xs">16</div>
+                )}
+                <Button variant="outline" size="sm" onClick={() => faviconRef.current?.click()} disabled={uploadingFavicon}>
+                  {uploadingFavicon ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
+                  {uploadingFavicon ? "Subiendo..." : "Subir favicon"}
+                </Button>
+                {panelCfg.faviconUrl && (
+                  <Button variant="ghost" size="sm" onClick={() => setPanelCfg({ ...panelCfg, faviconUrl: "" })}>
+                    Quitar
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Títulos */}
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="titulo-nav">Título del navegador (pestaña)</Label>
+              <Input id="titulo-nav" value={panelCfg.titulo} onChange={(e) => setPanelCfg({ ...panelCfg, titulo: e.target.value })}
+                placeholder="Arena13 - Panel de Gestión" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="nombre-panel">Nombre visible en el sidebar</Label>
+              <Input id="nombre-panel" value={panelCfg.nombrePanel} onChange={(e) => setPanelCfg({ ...panelCfg, nombrePanel: e.target.value })}
+                placeholder="Arena13" />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-2">
+            {cfgSaved && (
+              <span className="flex items-center gap-1.5 text-sm text-green-400">
+                <CheckCircle2 className="h-4 w-4" /> Guardado
+              </span>
+            )}
+            <Button onClick={handleSavePanelCfg}>
+              <Save className="h-4 w-4 mr-2" /> Guardar configuración
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Configuración Supabase */}
