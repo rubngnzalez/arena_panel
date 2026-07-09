@@ -27,14 +27,14 @@ export const FEATURES: Record<string, FeatureConfig> = {
   },
 
   calculadora_presupuestos: {
-    enabled: false,
+    enabled: true,
     label: 'Calculadora de Presupuestos',
     description: 'Generación de presupuestos con plantillas',
     category: 'gestion',
   },
 
   facturacion: {
-    enabled: false,
+    enabled: true,
     label: 'Sistema de Facturación',
     description: 'Gestión completa de facturas y cobros',
     category: 'gestion',
@@ -63,7 +63,7 @@ export const FEATURES: Record<string, FeatureConfig> = {
   },
 
   newsletter: {
-    enabled: false,
+    enabled: true,
     label: 'Newsletter',
     description: 'Envío de newsletters a clientes',
     category: 'comunicacion',
@@ -107,7 +107,7 @@ export const FEATURES: Record<string, FeatureConfig> = {
   },
 
   reportes: {
-    enabled: false,
+    enabled: true,
     label: 'Reportes Avanzados',
     description: 'Exportación de reportes personalizados',
     category: 'analytics',

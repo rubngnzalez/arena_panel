@@ -285,3 +285,93 @@ export interface ClienteConMetricas extends Cliente {
   proyectos_activos: number
   ultimo_proyecto?: Proyecto
 }
+
+// ============================================
+// Presupuestos
+// ============================================
+export type PresupuestoEstado = 'borrador' | 'enviado' | 'aceptado' | 'rechazado' | 'expirado'
+
+export interface PresupuestoLinea {
+  id: string
+  presupuesto_id: string
+  orden: number
+  descripcion: string
+  cantidad: number
+  precio_unitario: number
+  created_at: string
+}
+
+export interface Presupuesto {
+  id: string
+  cliente_id: string
+  cliente?: Pick<Cliente, 'id' | 'nombre' | 'empresa' | 'email'>
+  numero: string
+  titulo: string
+  estado: PresupuestoEstado
+  fecha_emision: string
+  fecha_validez?: string
+  descuento_porcentaje: number
+  iva_porcentaje: number
+  notas?: string
+  notas_internas?: string
+  created_by?: string
+  created_at: string
+  updated_at: string
+  lineas?: PresupuestoLinea[]
+}
+
+// ============================================
+// Facturación
+// ============================================
+export type FacturaEstado = 'borrador' | 'emitida' | 'pagada' | 'vencida' | 'anulada'
+export type MetodoPago = 'transferencia' | 'tarjeta' | 'efectivo' | 'bizum' | 'paypal' | 'otro'
+
+export interface FacturaLinea {
+  id: string
+  factura_id: string
+  orden: number
+  descripcion: string
+  cantidad: number
+  precio_unitario: number
+  created_at: string
+}
+
+export interface Factura {
+  id: string
+  cliente_id: string
+  cliente?: Pick<Cliente, 'id' | 'nombre' | 'empresa' | 'email'>
+  presupuesto_id?: string
+  numero: string
+  estado: FacturaEstado
+  fecha_emision: string
+  fecha_vencimiento?: string
+  fecha_pago?: string
+  descuento_porcentaje: number
+  iva_porcentaje: number
+  metodo_pago?: MetodoPago
+  notas?: string
+  created_by?: string
+  created_at: string
+  updated_at: string
+  lineas?: FacturaLinea[]
+}
+
+// ============================================
+// Newsletter
+// ============================================
+export type NewsletterEstado = 'borrador' | 'programada' | 'enviada'
+
+export interface NewsletterCampana {
+  id: string
+  titulo: string
+  asunto: string
+  contenido: string
+  estado: NewsletterEstado
+  segmento: 'todos' | 'activos' | 'personalizado'
+  destinatarios_ids: string[]
+  enviados_count: number
+  fecha_programada?: string
+  fecha_envio?: string
+  created_at: string
+  updated_at: string
+}

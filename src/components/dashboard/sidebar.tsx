@@ -22,6 +22,10 @@ import {
   Grid3x3,
   LogOut,
   Layers,
+  Calculator,
+  Receipt,
+  BarChart3,
+  Mail,
 } from "lucide-react"
 
 interface NavItem {
@@ -62,6 +66,8 @@ const navSections: NavSection[] = [
   {
     title: "Gestión",
     items: [
+      { name: "Presupuestos", href: "/presupuestos", icon: Calculator, feature: "calculadora_presupuestos" },
+      { name: "Facturación", href: "/facturacion", icon: Receipt, feature: "facturacion" },
       { name: "Tickets", href: "/tickets", icon: LifeBuoy, feature: "tickets_soporte" },
       { name: "Documentos", href: "/documentos", icon: FileText, feature: "documentos" },
       { name: "Notificaciones", href: "/notificaciones", icon: Bell, feature: "notificaciones" },
@@ -77,6 +83,8 @@ const navSections: NavSection[] = [
   {
     title: "Sistema",
     items: [
+      { name: "Reportes", href: "/reportes", icon: BarChart3, feature: "reportes" },
+      { name: "Newsletter", href: "/newsletter", icon: Mail, feature: "newsletter" },
       { name: "Funcionalidades", href: "/features", icon: Grid3x3 },
       { name: "Configuración", href: "/settings", icon: Settings },
     ],
