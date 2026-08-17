@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "@/styles/globals.css"
 import { ANTI_FLASH_SCRIPT } from "@/lib/themes"
+import { NeuralBackground } from "@/components/neural-background"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
 
@@ -33,6 +34,7 @@ export default function RootLayout({
         />
       </head>
       <body className={`${inter.variable} font-sans antialiased`}>
+        <NeuralBackground />
         {children}
       </body>
     </html>

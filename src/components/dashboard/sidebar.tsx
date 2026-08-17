@@ -104,24 +104,25 @@ export function Sidebar({ user, unreadNotifications = 0, onCloseMobile, onLogout
       {/* Logo / Header */}
       <div className={cn(
         "p-6",
-        isMobile && "flex items-center justify-between"
+        isMobile ? "flex items-center justify-between" : "flex justify-center"
       )}>
-        <Link href="/dashboard" className="flex items-center gap-2.5">
+        <Link href="/dashboard" className="group relative flex items-center justify-center" aria-label={panelNombre}>
+          {/* Halo neón detrás del logo */}
+          <span
+            aria-hidden
+            className="absolute h-12 w-12 rounded-full bg-arena-gradient blur-2xl opacity-90 animate-arena-neon-halo"
+          />
           {panelConfig.logoUrl ? (
-            <img src={panelConfig.logoUrl} alt={panelNombre} className="h-9 w-9 rounded-pill object-cover" />
+            <img
+              src={panelConfig.logoUrl}
+              alt={panelNombre}
+              className="relative h-32 w-32 object-contain animate-arena-float drop-shadow-[0_0_8px_rgba(120,125,255,0.3)]"
+            />
           ) : (
-            <span className="relative flex h-9 w-9 items-center justify-center rounded-pill bg-arena-gradient shadow-glow-purple">
-              <span className="text-sm font-semibold text-white">{panelNombre.charAt(0).toUpperCase()}</span>
+            <span className="relative text-8xl font-semibold tracking-tight animate-arena-float text-gradient drop-shadow-[0_0_10px_rgba(120,125,255,0.55)]">
+              A13
             </span>
           )}
-          <div className="leading-none">
-            <span className="block text-base font-medium tracking-tight">
-              {panelNombre.includes("13") ? (
-                <>Arena<span className="text-gradient">13</span></>
-              ) : panelNombre}
-            </span>
-            <span className="block text-[0.65rem] font-light text-muted-foreground tracking-widest2 uppercase mt-0.5">Panel</span>
-          </div>
         </Link>
         {isMobile && onCloseMobile && (
           <button
