@@ -84,20 +84,6 @@ export const FEATURES: Record<string, FeatureConfig> = {
   },
 
   // Integraciones
-  kilocode: {
-    enabled: true,
-    label: 'KiloCode',
-    description: 'Generación de código con IA',
-    category: 'integraciones',
-  },
-
-  opendesign: {
-    enabled: true,
-    label: 'OpenDesign',
-    description: 'Colaboración en diseños',
-    category: 'integraciones',
-  },
-
   arenatrece_sync: {
     enabled: true,
     label: 'Sincronización arenatrece.com',

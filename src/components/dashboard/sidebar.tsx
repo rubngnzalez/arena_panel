@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { getPanelConfig, type PanelConfig } from "@/lib/panel-config"
 import {
   Home, Users, Briefcase, FolderKanban, LifeBuoy, FileText,
-  Bell, Settings, Code, Palette, X, Grid3x3, LogOut, Layers,
+  Bell, Settings, X, Grid3x3, LogOut, Layers,
   Calculator, Receipt, BarChart3, Mail, Megaphone, ScrollText,
 } from "lucide-react"
 
@@ -57,13 +57,6 @@ const navSections: NavSection[] = [
       { name: "Documentos", href: "/documentos", icon: FileText, feature: "documentos" },
       { name: "Notificaciones", href: "/notificaciones", icon: Bell, feature: "notificaciones" },
       { name: "Banners", href: "/banners", icon: Megaphone, feature: "banners" },
-    ],
-  },
-  {
-    title: "Integraciones",
-    items: [
-      { name: "KiloCode", href: "/integraciones/kilocode", icon: Code, feature: "kilocode" },
-      { name: "OpenDesign", href: "/integraciones/opendesign", icon: Palette, feature: "opendesign" },
     ],
   },
   {
