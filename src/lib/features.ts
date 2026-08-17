@@ -62,6 +62,20 @@ export const FEATURES: Record<string, FeatureConfig> = {
     category: 'comunicacion',
   },
 
+  banners: {
+    enabled: true,
+    label: 'Banners y Promociones',
+    description: 'Banners promocionales configurables con caducidad',
+    category: 'comunicacion',
+  },
+
+  auditoria: {
+    enabled: true,
+    label: 'Auditoría',
+    description: 'Historial de logueos y descargas de la bóveda',
+    category: 'analytics',
+  },
+
   newsletter: {
     enabled: true,
     label: 'Newsletter',

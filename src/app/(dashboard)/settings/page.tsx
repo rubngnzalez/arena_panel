@@ -16,8 +16,11 @@ import {
 } from "@/components/ui/dialog"
 import {
   Database, Rocket, Globe, HelpCircle, Copy, Check, Save, RefreshCw,
-  Palette, Upload, CheckCircle2,
+  Palette, Upload, CheckCircle2, MessageCircle, Plus, Trash2, Pencil, Phone, Mail,
 } from "lucide-react"
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select"
 import { getSupabaseConfig, getPanelUrl } from "@/lib/supabase/config"
 import { THEMES, getThemeById, getStoredThemeId, setTheme as applyThemeId } from "@/lib/themes"
 import { getPanelConfig, savePanelConfig } from "@/lib/panel-config"
@@ -41,6 +44,12 @@ export default function SettingsPage() {
   const logoRef = useRef<HTMLInputElement>(null)
   const faviconRef = useRef<HTMLInputElement>(null)
 
+  // Métodos de contacto
+  const [contactos, setContactos] = useState<any[]>([])
+  const [contactoDialog, setContactoDialog] = useState(false)
+  const [editContacto, setEditContacto] = useState<any>(null)
+  const [contactoForm, setContactoForm] = useState({ tipo: "whatsapp", etiqueta: "", valor: "", orden: 0, activo: true })
+
   useEffect(() => {
     const config = getSupabaseConfig()
     setSupabaseUrl(config.url)
@@ -55,6 +64,66 @@ export default function SettingsPage() {
       faviconUrl: pc.faviconUrl || "",
     })
   }, [])
+
+  // Cargar métodos de contacto
+  useEffect(() => {
+    supabase.from("metodos_contacto").select("*").order("orden", { ascending: true }).then(({ data }) => {
+      setContactos(data || [])
+    })
+  }, [supabase])
+
+  const TIPOS_CONTACTO: Record<string, { label: string; icon: typeof Phone }> = {
+    whatsapp: { label: "WhatsApp", icon: MessageCircle },
+    telefono: { label: "Teléfono", icon: Phone },
+    email: { label: "Email", icon: Mail },
+    telegram: { label: "Telegram", icon: MessageCircle },
+    instagram: { label: "Instagram", icon: MessageCircle },
+    linkedin: { label: "LinkedIn", icon: MessageCircle },
+    web: { label: "Web", icon: Globe },
+    otro: { label: "Otro", icon: MessageCircle },
+  }
+
+  const saveContacto = async () => {
+    if (!contactoForm.etiqueta.trim() || !contactoForm.valor.trim()) return
+    try {
+      if (editContacto) {
+        await supabase.from("metodos_contacto").update({
+          tipo: contactoForm.tipo, etiqueta: contactoForm.etiqueta.trim(),
+          valor: contactoForm.valor.trim(), orden: contactoForm.orden, activo: contactoForm.activo,
+        }).eq("id", editContacto.id)
+      } else {
+        await supabase.from("metodos_contacto").insert({
+          tipo: contactoForm.tipo, etiqueta: contactoForm.etiqueta.trim(),
+          valor: contactoForm.valor.trim(), icono: "MessageCircle",
+          orden: contactoForm.orden, activo: contactoForm.activo,
+        })
+      }
+      const { data } = await supabase.from("metodos_contacto").select("*").order("orden", { ascending: true })
+      setContactos(data || [])
+      setContactoDialog(false)
+    } catch (err) {
+      console.error("Error:", err)
+      alert("No se pudo guardar.")
+    }
+  }
+
+  const deleteContacto = async (id: string) => {
+    if (!confirm("¿Eliminar este método de contacto?")) return
+    await supabase.from("metodos_contacto").delete().eq("id", id)
+    setContactos(contactos.filter((c) => c.id !== id))
+  }
+
+  const openNewContacto = () => {
+    setEditContacto(null)
+    setContactoForm({ tipo: "whatsapp", etiqueta: "", valor: "", orden: contactos.length, activo: true })
+    setContactoDialog(true)
+  }
+
+  const openEditContacto = (c: any) => {
+    setEditContacto(c)
+    setContactoForm({ tipo: c.tipo, etiqueta: c.etiqueta, valor: c.valor, orden: c.orden, activo: c.activo })
+    setContactoDialog(true)
+  }
 
   const handleThemeChange = (themeId: string) => {
     setCurrentThemeId(themeId)
@@ -126,7 +195,7 @@ export default function SettingsPage() {
 
   const handleDeploy = async () => {
     // En producción esto haría push al repo
-    window.open("https://github.com/arenatrece/panel/actions", "_blank")
+    window.open("https://github.com/rubngnzalez/arena_panel/actions", "_blank")
   }
 
   const copyToClipboard = (text: string) => {
@@ -266,6 +335,90 @@ export default function SettingsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Métodos de contacto */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-cyan-500/20 rounded-lg">
+                <MessageCircle className="h-5 w-5 text-cyan-400" />
+              </div>
+              <div>
+                <CardTitle>Métodos de Contacto</CardTitle>
+                <CardDescription>Configura cómo pueden contactarte los clientes desde los banners</CardDescription>
+              </div>
+            </div>
+            <Button variant="outline" size="sm" onClick={openNewContacto}>
+              <Plus className="h-4 w-4 mr-2" /> Añadir
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {contactos.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">No hay métodos de contacto configurados.</p>
+          ) : (
+            <div className="space-y-2">
+              {contactos.map((c) => {
+                const info = TIPOS_CONTACTO[c.tipo] || TIPOS_CONTACTO.otro
+                const Icon = info.icon
+                return (
+                  <div key={c.id} className={`flex items-center gap-3 rounded-lg border border-white/5 p-3 ${!c.activo ? "opacity-50" : ""}`}>
+                    <div className="shrink-0 h-9 w-9 rounded-lg bg-white/5 flex items-center justify-center">
+                      <Icon className="h-4 w-4 text-cyan-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium">{c.etiqueta}</p>
+                      <p className="text-xs text-muted-foreground truncate">{c.valor}</p>
+                    </div>
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-white/5 text-muted-foreground">{info.label}</span>
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => openEditContacto(c)}><Pencil className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive" onClick={() => deleteContacto(c.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Dialog contacto */}
+      <Dialog open={contactoDialog} onOpenChange={setContactoDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><MessageCircle className="h-5 w-5" /> {editContacto ? "Editar contacto" : "Nuevo método de contacto"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Tipo</Label>
+              <Select value={contactoForm.tipo} onValueChange={(v) => setContactoForm({ ...contactoForm, tipo: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {Object.entries(TIPOS_CONTACTO).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Etiqueta</Label>
+              <Input value={contactoForm.etiqueta} onChange={(e) => setContactoForm({ ...contactoForm, etiqueta: e.target.value })} placeholder="Ej: Soporte WhatsApp" />
+            </div>
+            <div className="space-y-2">
+              <Label>Valor</Label>
+              <Input value={contactoForm.valor} onChange={(e) => setContactoForm({ ...contactoForm, valor: e.target.value })} placeholder={contactoForm.tipo === "whatsapp" ? "https://wa.me/34600000000" : contactoForm.tipo === "email" ? "hola@arena13.com" : "+34 600 000 000"} />
+            </div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={contactoForm.activo} onChange={(e) => setContactoForm({ ...contactoForm, activo: e.target.checked })} className="accent-primary" />
+              <span className="text-sm">Activo</span>
+            </label>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setContactoDialog(false)}>Cancelar</Button>
+            <Button onClick={saveContacto} disabled={!contactoForm.etiqueta.trim() || !contactoForm.valor.trim()}>{editContacto ? "Guardar" : "Añadir"}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Configuración Supabase */}
@@ -448,7 +601,7 @@ export default function SettingsPage() {
                       Primero, añade el registro TXT que GitHub te proporciona en:
                     </p>
                     <code className="text-xs bg-white/5 px-2 py-1 rounded">
-                      github.com/arenatrece/panel/settings/pages
+                      github.com/rubngnzalez/arena_panel/settings/pages
                     </code>
                   </div>
 

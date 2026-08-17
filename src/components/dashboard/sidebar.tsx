@@ -8,24 +8,9 @@ import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { getPanelConfig, type PanelConfig } from "@/lib/panel-config"
 import {
-  Home,
-  Users,
-  Briefcase,
-  FolderKanban,
-  LifeBuoy,
-  FileText,
-  Bell,
-  Settings,
-  Code,
-  Palette,
-  X,
-  Grid3x3,
-  LogOut,
-  Layers,
-  Calculator,
-  Receipt,
-  BarChart3,
-  Mail,
+  Home, Users, Briefcase, FolderKanban, LifeBuoy, FileText,
+  Bell, Settings, Code, Palette, X, Grid3x3, LogOut, Layers,
+  Calculator, Receipt, BarChart3, Mail, Megaphone, ScrollText,
 } from "lucide-react"
 
 interface NavItem {
@@ -71,6 +56,7 @@ const navSections: NavSection[] = [
       { name: "Tickets", href: "/tickets", icon: LifeBuoy, feature: "tickets_soporte" },
       { name: "Documentos", href: "/documentos", icon: FileText, feature: "documentos" },
       { name: "Notificaciones", href: "/notificaciones", icon: Bell, feature: "notificaciones" },
+      { name: "Banners", href: "/banners", icon: Megaphone, feature: "banners" },
     ],
   },
   {
@@ -84,6 +70,7 @@ const navSections: NavSection[] = [
     title: "Sistema",
     items: [
       { name: "Reportes", href: "/reportes", icon: BarChart3, feature: "reportes" },
+      { name: "Auditoría", href: "/auditoria", icon: ScrollText, feature: "auditoria" },
       { name: "Newsletter", href: "/newsletter", icon: Mail, feature: "newsletter" },
       { name: "Funcionalidades", href: "/features", icon: Grid3x3 },
       { name: "Configuración", href: "/settings", icon: Settings },

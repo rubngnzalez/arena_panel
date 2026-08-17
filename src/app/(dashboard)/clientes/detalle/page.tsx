@@ -27,7 +27,7 @@ import {
   Image as ImageIcon, Palette, Globe, MapPin, Plus, X, FileDown,
   Hash, Type, Eye,
   Figma, Github, ListChecks, ExternalLink, Pencil, Link2, Vault,
-  PackageOpen, FileCheck2, Check, SquareCheck,
+  PackageOpen, FileCheck2, Check, SquareCheck, ChevronDown,
 } from "lucide-react"
 import { formatDate, formatRelativeTime, formatCurrency, getInitials } from "@/lib/utils"
 import type {
@@ -130,6 +130,7 @@ function ClienteDetalleContent() {
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [showInfo, setShowInfo] = useState(false)
 
   // Edición identidad visual
   const [editingBrand, setEditingBrand] = useState(false)
@@ -325,6 +326,19 @@ function ClienteDetalleContent() {
   }
 
   const getDocUrl = (path: string) => supabase.storage.from("cliente-docs").getPublicUrl(path).data.publicUrl
+
+  const handleDocDownload = async (doc: ClienteDocumento) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      await supabase.from("vault_descargas").insert({
+        cliente_id: id, documento_id: doc.id, documento_titulo: doc.titulo,
+        user_id: user?.id, user_agent: navigator.userAgent,
+      })
+    } catch (err) {
+      console.error("Error registrando descarga:", err)
+    }
+    window.open(getDocUrl(doc.storage_path), "_blank")
+  }
 
   // === TRABAJOS ===
 
@@ -662,37 +676,44 @@ function ClienteDetalleContent() {
             </div>
           </div>
 
-          {/* Datos compactos con edición inline */}
+          {/* Información personal colapsable */}
           {!editing ? (
             <div className="mt-6 pt-6 border-t border-white/5">
-              <div className="flex items-center justify-end mb-3">
+              <div className="flex items-center justify-between">
+                <button
+                  className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => setShowInfo(!showInfo)}
+                >
+                  <ChevronDown className={`h-4 w-4 transition-transform ${showInfo ? "" : "-rotate-90"}`} />
+                  Información personal
+                </button>
                 <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
                   <Save className="h-3.5 w-3.5 mr-1.5" /> Editar datos
                 </Button>
               </div>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-4">
-                <CampoInfo label="Sector" value={cliente.sector || "—"} />
-                <CampoInfo label="Web" value={cliente.web || "—"} />
-                <CampoInfo label="Teléfono" value={cliente.telefono || "—"} />
-                <CampoInfo label="Ciudad" value={cliente.ciudad || "—"} />
-                <CampoInfo label="Dirección" value={cliente.direccion || "—"} />
-                <CampoInfo label="Cód. postal" value={cliente.codigo_postal || "—"} />
-                <CampoInfo label="Captación" value={cliente.fecha_captacion ? formatDate(cliente.fecha_captacion) : "—"} />
-                <CampoInfo label="Email" value={cliente.email || "—"} />
-              </div>
-              {(cliente.descripcion || cliente.notas) && (
-                <div className="grid sm:grid-cols-2 gap-4 mt-4">
-                  {cliente.descripcion && (
-                    <div>
-                      <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Descripción</p>
-                      <p className="text-sm whitespace-pre-wrap">{cliente.descripcion}</p>
+              {showInfo && (
+                <>
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-4 mt-4">
+                    <CampoInfo label="Sector" value={cliente.sector || "—"} />
+                    <CampoInfo label="Ciudad" value={cliente.ciudad || "—"} />
+                    <CampoInfo label="Dirección" value={cliente.direccion || "—"} />
+                    <CampoInfo label="Cód. postal" value={cliente.codigo_postal || "—"} />
+                  </div>
+                  {(cliente.descripcion || cliente.notas) && (
+                    <div className="grid sm:grid-cols-2 gap-4 mt-4">
+                      {cliente.descripcion && (
+                        <div>
+                          <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Descripción</p>
+                          <p className="text-sm whitespace-pre-wrap">{cliente.descripcion}</p>
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Notas internas</p>
+                        <p className="text-sm whitespace-pre-wrap">{cliente.notas || "Sin notas."}</p>
+                      </div>
                     </div>
                   )}
-                  <div>
-                    <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Notas internas</p>
-                    <p className="text-sm whitespace-pre-wrap">{cliente.notas || "Sin notas."}</p>
-                  </div>
-                </div>
+                </>
               )}
             </div>
           ) : (
@@ -898,9 +919,7 @@ function ClienteDetalleContent() {
                                 <p className="text-xs text-muted-foreground truncate">{formatBytes(doc.tamano_bytes)} · {doc.nombre_archivo}</p>
                               </div>
                               <div className="flex items-center gap-1 shrink-0">
-                                <a href={getDocUrl(doc.storage_path)} target="_blank" rel="noopener noreferrer" download>
-                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0"><Download className="h-4 w-4" /></Button>
-                                </a>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleDocDownload(doc)}><Download className="h-4 w-4" /></Button>
                                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => handleDocDelete(doc)}>
                                   <Trash2 className="h-4 w-4" />
                                 </Button>

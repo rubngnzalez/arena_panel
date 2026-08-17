@@ -29,6 +29,12 @@ export default function LoginPage() {
       })
 
       if (signInError) {
+        // Registrar intento fallido
+        try {
+          await supabase.from("login_history").insert({
+            email, exito: false, user_agent: navigator.userAgent,
+          })
+        } catch {}
         setError(signInError.message || "No se pudo iniciar sesión. Revisa tus credenciales.")
         setLoading(false)
         return
@@ -39,6 +45,19 @@ export default function LoginPage() {
         setLoading(false)
         return
       }
+
+      // Registrar login en el historial
+      try {
+        const ua = navigator.userAgent
+        const dispositivo = /mobile|android|iphone/i.test(ua) ? "Móvil" : /tablet|ipad/i.test(ua) ? "Tablet" : "Escritorio"
+        await supabase.from("login_history").insert({
+          user_id: data.user.id,
+          email: data.user.email,
+          user_agent: ua,
+          dispositivo,
+          exito: true,
+        })
+      } catch {}
 
       router.push("/dashboard")
       router.refresh()

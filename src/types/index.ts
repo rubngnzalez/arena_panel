@@ -375,3 +375,106 @@ export interface NewsletterCampana {
   created_at: string
   updated_at: string
 }
+
+// ============================================
+// Tickets de soporte (extendido)
+// ============================================
+export type TicketEstado = 'abierto' | 'en_proceso' | 'esperando_respuesta' | 'resuelto' | 'cerrado'
+export type TicketPrioridad = 'baja' | 'normal' | 'alta' | 'urgente'
+export type TicketCategoria = 'tecnico' | 'facturacion' | 'consulta' | 'otro'
+
+export interface TicketMensaje {
+  id: string
+  ticket_id: string
+  remitente_id?: string
+  mensaje: string
+  adjuntos?: Record<string, any>
+  es_interno: boolean
+  created_at: string
+}
+
+export interface Ticket {
+  id: string
+  cliente_id?: string
+  cliente?: Pick<Cliente, 'id' | 'nombre' | 'empresa'>
+  titulo: string
+  descripcion: string
+  estado: TicketEstado
+  prioridad: TicketPrioridad
+  categoria?: TicketCategoria
+  creado_por?: string
+  asignado_a?: string
+  created_at: string
+  updated_at: string
+  mensajes?: TicketMensaje[]
+}
+
+// ============================================
+// Auditoria: logueos y descargas
+// ============================================
+export interface LoginHistory {
+  id: string
+  user_id?: string
+  email?: string
+  ip_address?: string
+  user_agent?: string
+  dispositivo?: string
+  exito: boolean
+  created_at: string
+}
+
+export interface VaultDescarga {
+  id: string
+  cliente_id: string
+  cliente?: Pick<Cliente, 'id' | 'nombre' | 'empresa'>
+  documento_id?: string
+  documento_titulo?: string
+  user_id?: string
+  ip_address?: string
+  created_at: string
+}
+
+// ============================================
+// Banners promocionales / notificaciones
+// ============================================
+export type BannerTipo = 'info' | 'promocion' | 'aviso' | 'urgente'
+export type BannerPosicion = 'top' | 'dashboard'
+
+export interface Banner {
+  id: string
+  titulo: string
+  mensaje: string
+  tipo: BannerTipo
+  color: string
+  icono: string
+  activo: boolean
+  fecha_inicio: string
+  fecha_fin?: string
+  dias_caducidad?: number
+  mostrar_boton: boolean
+  boton_texto?: string
+  boton_url?: string
+  posicion: BannerPosicion
+  orden: number
+  descartable: boolean
+  created_by?: string
+  created_at: string
+  updated_at: string
+}
+
+// ============================================
+// Metodos de contacto del admin
+// ============================================
+export type TipoContacto = 'whatsapp' | 'telefono' | 'email' | 'telegram' | 'instagram' | 'linkedin' | 'web' | 'otro'
+
+export interface MetodoContacto {
+  id: string
+  tipo: TipoContacto
+  etiqueta: string
+  valor: string
+  icono: string
+  orden: number
+  activo: boolean
+  created_at: string
+  updated_at: string
+}
