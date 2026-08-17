@@ -140,3 +140,16 @@ La cuenta tiene varios proyectos. **PERMISO ESTRICTO**:
 - Antes de cualquier acción con la CLI (`supabase link`, `db push`, etc.), verificar SIEMPRE que el `--project-ref` apunta a `iqshrizfepjmckcpdljc` (PabloRecursos).
 - Migraciones del panel: **`supabase/migrations-arena/`** aplicadas con `supabase/aplicar-remoto.ps1` (Management API, token de acceso; NO requiere password BD). La carpeta `supabase/migrations/` es histórica del proyecto Arena13 antiguo — no re-aplicar.
 - El trigger `on_auth_user_created` está blindado: solo crea perfiles de usuarios con metadata `app: 'arena_panel'`.
+
+## 10. Trabajo en 2 PCs — PROTOCOLO DE SINCRONIZACIÓN (OBLIGATORIO)
+
+Este proyecto se trabaja desde 2 PCs alternativamente (mismo repo, rama `main`). TODO agente (Kilo/Claude) en CUALQUIER PC debe seguir esto SIEMPRE:
+
+1. **Al empezar cada sesión**: `git pull origin main` ANTES de tocar nada. Si hay cambios locales sin commit, avisar al usuario y hacer `git stash` antes del pull (o usar `.\sincronizar.ps1`).
+2. **Al terminar cada sesión con cambios**: pedir confirmación al usuario → commit (mensaje conciso en español, estilo `feat: ...` / `fix: ...` / `chore: ...`) → `git push origin main`.
+3. **NUNCA commitear**: `.env.local`, `env-local-export.txt`, `.supabase-token` (secrets; ya están en `.gitignore`).
+4. **Verificar siempre** tras sincronizar: `git log --oneline -1` — ambos PCs deben apuntar al mismo hash.
+5. Los 2 PCs nunca trabajan a la vez; aun así, pull antes de empezar y push al terminar, sin excepción.
+
+Config de git idéntica en ambos PCs: `user.name "rubngnzalez"` / `user.email "ruben.mdigital@gmail.com"`.
+En un PC nuevo: la primera sincronización pide login de GitHub en el navegador (Git Credential Manager lo guarda para siempre).
