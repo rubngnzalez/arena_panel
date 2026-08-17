@@ -19,6 +19,7 @@ export async function getServerClient() {
   }
 
   return createServerClient<Database>(url, key, {
+    db: { schema: 'arena_panel' },
     cookies: {
       get(name: string) {
         return cookieStore.get(name)?.value

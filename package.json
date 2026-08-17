@@ -9,7 +9,7 @@
     "start": "next start",
     "export": "next build && next export",
     "lint": "next lint",
-    "supabase:generate": "supabase gen types typescript --local > src/lib/database.types.ts",
+    "supabase:generate": "npx supabase@latest gen types typescript --project-ref iqshrizfepjmckcpdljc --schema arena_panel > src/lib/database.types.ts",
     "supabase:push": "supabase db push",
     "supabase:seed": "supabase db seed"
   },

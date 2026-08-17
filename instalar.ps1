@@ -139,7 +139,7 @@ if (Test-Path $rutaEnv) {
     Escribir-Paso "No hay archivo exportado: se creara .env.local a mano"
     Write-Host ""
     Write-Host "  Necesitas la ANON KEY del proyecto Arena13 en Supabase:" -ForegroundColor White
-    Write-Host "  https://supabase.com/dashboard/project/cvfelnyalkdjxzzelski/settings/api" -ForegroundColor DarkGray
+    Write-Host "  https://supabase.com/dashboard/project/iqshrizfepjmckcpdljc/settings/api" -ForegroundColor DarkGray
     Write-Host ""
 
     do {
@@ -149,15 +149,15 @@ if (Test-Path $rutaEnv) {
 
     $serviceKey  = (Read-Host "  SUPABASE_SERVICE_ROLE_KEY (opcional, Enter para omitir)").Trim()
     $dbPassword  = (Read-Host "  SUPABASE_DB_PASSWORD (opcional, Enter para omitir)").Trim()
-    $url         = Leer-ConDefault "  NEXT_PUBLIC_SUPABASE_URL" "https://cvfelnyalkdjxzzelski.supabase.co"
+    $url         = Leer-ConDefault "  NEXT_PUBLIC_SUPABASE_URL" "https://iqshrizfepjmckcpdljc.supabase.co"
     $dominio     = Leer-ConDefault "  NEXT_PUBLIC_DOMAIN" "arenatrece.com"
     $subdominio  = Leer-ConDefault "  NEXT_PUBLIC_PANEL_SUBDOMAIN" "panel"
 
     $lineas = @(
         "# ",
         "# PANEL ARENA13 - CONFIGURACION SUPABASE",
-        "# Proyecto: Arena13 (ref: cvfelnyalkdjxzzelski)",
-        "# https://supabase.com/dashboard/project/cvfelnyalkdjxzzelski",
+        "# Proyecto: Arena13 (ref: iqshrizfepjmckcpdljc)",
+        "# https://supabase.com/dashboard/project/iqshrizfepjmckcpdljc",
         "# RESTRICCION: estas claves son SOLO para Arena13.",
         "#              PROHIBIDO usarlas con el proyecto UMOFOUR.",
         "# ",

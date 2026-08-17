@@ -50,3 +50,6 @@ Thumbs.db
 # Logs
 logs/
 *.log
+
+# Token Supabase Management API (local, NO commitear)
+.supabase-token

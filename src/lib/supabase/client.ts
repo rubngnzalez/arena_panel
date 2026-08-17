@@ -18,7 +18,9 @@ export function getBrowserClient() {
       throw new Error('Supabase credentials not configured')
     }
 
-    supabaseClient = createBrowserClient<Database>(url, key)
+    supabaseClient = createBrowserClient<Database>(url, key, {
+      db: { schema: 'arena_panel' },
+    })
   }
 
   return supabaseClient

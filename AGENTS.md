@@ -29,8 +29,9 @@ npm install
 npm run dev          # http://localhost:3000
 npm run build        # build + export a ./out
 npm run lint         # (falta configurar ESLint base)
-npm run supabase:generate  # regenera tipos TS desde Supabase
-npm run supabase:push     # aplica migraciones
+npm run supabase:generate  # regenera tipos TS desde Supabase (requiere CLI v2+ y password BD en SUPABASE_DB_PASSWORD)
+npm run supabase:push     # aplica migraciones (LOCAL, historico — NO usar contra PabloRecursos)
+powershell -ExecutionPolicy Bypass -File supabase\aplicar-remoto.ps1  # aplica migrations-arena al proyecto PabloRecursos via Management API (sin password BD)
 ```
 
 > ⚠️ **Importante**: NO ejecutar `npm run build` con el `npm run dev` corriendo — corrompe la caché `.next` (error `Cannot find module './XX.js'`). Parar el dev, borrar `.next`, y rearrancar.
@@ -58,7 +59,9 @@ src/
 │   ├── integraciones/        # kilocode, opendesign, config
 │   └── utils.ts
 ├── hooks/  styles/  types/
-supabase/migrations/  # 001..005 (esquema completo)
+supabase/migrations/        # 001..014 (esquema completo, HISTORICO proyecto Arena13)
+supabase/migrations-arena/  # misma migraciones adaptadas al esquema arena_panel (PabloRecursos)
+supabase/aplicar-remoto.ps1 # aplica migrations-arena via Management API
 .github/workflows/deploy.yml  # CI/CD GitHub Pages
 ```
 
@@ -82,7 +85,7 @@ Replica de la identidad de **arenatrece.com**. **Única fuente de verdad: `src/s
 
 ### ✅ Hecho
 - Arquitectura completa Next.js + Supabase.
-- 5 migraciones SQL **aplicadas en Arena13** (`cvfelnyalkdjxzzelski`): clientes, servicios, proyectos, tareas, auth/RLS, portal, notificaciones, tickets, documentos, integraciones.
+- **MIGRADO A PabloRecursos** (cuenta nueva, ref `iqshrizfepjmckcpdljc`): las 14 migraciones aplicadas en el **esquema dedicado `arena_panel`** (2026-08-17). El proyecto antiguo Arena13 queda abandonado. El esquema `public` de PabloRecursos (tablas `ap_*`/`psy_*`) NO se toca.
 - Rediseño de marca aplicado a: globals.css, tailwind.config.ts, button/input/badge/card, sidebar, header, login, landing, dashboard.
 - **6 bugs de auditoría resueltos** (ver abajo).
 - Build verificado OK (18 rutas estáticas, export a `./out`).
@@ -129,9 +132,11 @@ Replica de la identidad de **arenatrece.com**. **Única fuente de verdad: `src/s
 
 ## 9. Proyectos Supabase — RESTRICCIÓN CRÍTICA
 
-La cuenta Pro tiene varios proyectos. **PERMISO ESTRICTO**:
+La cuenta tiene varios proyectos. **PERMISO ESTRICTO**:
 
-- ✅ **ÚNICO proyecto autorizado**: `Arena13` (ref: `cvfelnyalkdjxzzelski`) → https://cvfelnyalkdjxzzelski.supabase.co
-- 🚫 **PROHIBIDO tocar, leer o escribir**: `UMOFOUR` (cualquier otro proyecto de la cuenta).
-- Antes de cualquier acción con la CLI (`supabase link`, `db push`, etc.), verificar SIEMPRE que el `--project-ref` o la conexión apunta a `cvfelnyalkdjxzzelski` (Arena13) y NUNCA a otro.
-- Login de la cuenta (no usar para automatizar): solo referencia, no almacenar credenciales de usuario en el repo.
+- ✅ **ÚNICO proyecto autorizado**: `PabloRecursos` (ref: `iqshrizfepjmckcpdljc`) → https://iqshrizfepjmckcpdljc.supabase.co
+- El panel vive SOLO en el **esquema `arena_panel`** de ese proyecto. PROHIBIDO modificar el esquema `public` (tablas `ap_*`/`psy_*` de otras apps), los buckets `fornieles`/`ap-marcas` ni el `site_url` de Auth (`agenda.pfornieles.com`).
+- 🚫 **PROHIBIDO tocar, leer o escribir**: `PanelDropBox` (ref: `oqeidyljaqedicmjgciu`) y cualquier otro proyecto de la cuenta.
+- Antes de cualquier acción con la CLI (`supabase link`, `db push`, etc.), verificar SIEMPRE que el `--project-ref` apunta a `iqshrizfepjmckcpdljc` (PabloRecursos).
+- Migraciones del panel: **`supabase/migrations-arena/`** aplicadas con `supabase/aplicar-remoto.ps1` (Management API, token de acceso; NO requiere password BD). La carpeta `supabase/migrations/` es histórica del proyecto Arena13 antiguo — no re-aplicar.
+- El trigger `on_auth_user_created` está blindado: solo crea perfiles de usuarios con metadata `app: 'arena_panel'`.
