@@ -1,6 +1,7 @@
 "use client"
 
 import { AsistentesView } from "@/components/ia/asistentes-view"
+import { ReporteInteraccionesPDF } from "@/components/ia/reporte-interacciones-pdf"
 
 export default function MonitorIaPage() {
   return (
@@ -12,6 +13,7 @@ export default function MonitorIaPage() {
         </p>
       </div>
       <AsistentesView todos />
+      <ReporteInteraccionesPDF titulo="Todos los clientes" />
     </div>
   )
 }

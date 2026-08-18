@@ -1,4 +1,4 @@
-export type Rol = "admin" | "editor" | "cliente"
+export type Rol = "propietario" | "admin" | "editor" | "cliente"
 
 export const RUTAS_CLIENTE = ["/asistentes", "/consumo", "/documentos", "/citas"]
 
@@ -12,6 +12,8 @@ interface QueryableSupabase {
   }
 }
 
+const ROLES_EQUIPO: Rol[] = ["propietario", "admin", "editor"]
+
 export async function obtenerRol(
   supabase: QueryableSupabase,
   userId: string
@@ -22,11 +24,16 @@ export async function obtenerRol(
       .select("rol")
       .eq("id", userId)
       .single()
-    if (data?.rol === "admin" || data?.rol === "editor") return data.rol
+    const rol = data?.rol as Rol | undefined
+    if (rol && [...ROLES_EQUIPO, "cliente"].includes(rol)) return rol
     return "cliente"
   } catch {
     return "cliente"
   }
+}
+
+export function esEquipo(rol: Rol | null | undefined): boolean {
+  return !!rol && ROLES_EQUIPO.includes(rol)
 }
 
 export function esRutaPermitidaCliente(pathname: string | null): boolean {

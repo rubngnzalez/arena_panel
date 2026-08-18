@@ -46,14 +46,69 @@ export interface Cliente {
   instagram?: string
   linkedin?: string
   facebook?: string
-  // Asistentes IA
-  minutos_contratados?: number
+  // Plan financiero (retainer + overage)
+  plan_nombre?: string
+  precio_base_mensual?: number
+  limite_minutos_incluidos?: number
+  limite_mensajes_whatsapp_incluidos?: number
+  precio_minuto_extra?: number
+  precio_mensaje_extra?: number
+  minutos_consumidos_mes?: number
+  mensajes_whatsapp_consumidos_mes?: number
+  saldo_pendiente_pago?: number
+  estado_pago?: EstadoPago
+  // Acceso y portal
+  usuario_auth_id?: string
+  permisos_portal?: PermisoPortal
   // Integraciones IA
   retell_agent_id?: string
-  ia_phone_number?: string
-  calendar_id?: string
-  make_webhook_url?: string
+  google_calendar_id?: string
+  webhook_make_url?: string
+  telefono_asignado?: string
+}
+
+export type EstadoPago = 'al_dia' | 'pendiente_facturacion' | 'deuda_vencida'
+
+export interface PermisoPortal {
+  ver_audios?: boolean
+  ver_transcripciones?: boolean
+  descargar_pdf?: boolean
+  ver_precios?: boolean
+}
+
+// Liquidación devuelta por la RPC calcular_liquidacion_cliente
+export interface LiquidacionCliente {
+  ok: boolean
+  error?: string
+  plan_nombre?: string
+  precio_base_mensual?: number
+  limite_minutos_incluidos?: number
+  limite_mensajes_whatsapp_incluidos?: number
   precio_minuto_extra?: number
+  precio_mensaje_extra?: number
+  minutos_consumidos_mes?: number
+  mensajes_whatsapp_consumidos_mes?: number
+  minutos_extra?: number
+  mensajes_extra?: number
+  coste_minutos_extra?: number
+  coste_mensajes_extra?: number
+  total_overage?: number
+  total_final?: number
+  saldo_pendiente_pago?: number
+  estado_pago?: EstadoPago
+}
+
+// Historial de cierre mensual
+export interface ConsumoMensual {
+  id: string
+  cliente_id: string
+  periodo_mes: string
+  minutos_consumidos: number
+  mensajes_consumidos: number
+  total_base: number
+  total_overage: number
+  total_facturado: number
+  created_at: string
 }
 
 // Documento/material del cliente (descargable)
@@ -386,6 +441,15 @@ export interface InteraccionIA {
   duracion_seg?: number
   transcripcion?: TurnoTranscripcion[]
   resumen?: string
+  resumen_ejecutivo?: string
+  telefono_contacto?: string
+  variables_extraidas?: {
+    nombre?: string
+    telefono?: string
+    servicio?: string
+    motivo?: string
+    [k: string]: unknown
+  }
   valoracion?: number
   valoracion_tags?: string[]
   metadata?: Record<string, any>

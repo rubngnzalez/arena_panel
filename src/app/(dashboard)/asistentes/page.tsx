@@ -1,6 +1,7 @@
 "use client"
 
 import { AsistentesView } from "@/components/ia/asistentes-view"
+import { ReporteInteraccionesPDF } from "@/components/ia/reporte-interacciones-pdf"
 
 export default function AsistentesPage() {
   return (
@@ -12,6 +13,7 @@ export default function AsistentesPage() {
         </p>
       </div>
       <AsistentesView todos={false} />
+      <ReporteInteraccionesPDF titulo="Mi cuenta" />
     </div>
   )
 }

@@ -28,11 +28,13 @@ import {
   Hash, Type, Eye,
   Figma, Github, ListChecks, ExternalLink, Pencil, Link2, Vault,
   PackageOpen, FileCheck2, Check, SquareCheck, ChevronDown, Bot,
+  Receipt, CalendarCheck, UserCog, KeyRound,
 } from "lucide-react"
-import { formatDate, formatRelativeTime, formatCurrency, getInitials } from "@/lib/utils"
+import { formatDate, formatRelativeTime, formatCurrency, getInitials, cn } from "@/lib/utils"
 import type {
   Cliente, Proyecto, ClienteServicio, Actividad,
   ClienteDocumento, Trabajo, TipoDocumento, TipoServicioTrabajo, EstadoTrabajo,
+  LiquidacionCliente,
 } from "@/types"
 
 // === CONSTANTES ===
@@ -152,13 +154,20 @@ function ClienteDetalleContent() {
     instagram: "", linkedin: "", facebook: "",
   })
 
-  // Integraciones IA
+  // Integraciones IA + plan financiero + acceso
   const [iaData, setIaData] = useState({
-    retell_agent_id: "", ia_phone_number: "", calendar_id: "",
-    make_webhook_url: "", minutos_contratados: "0", precio_minuto_extra: "0",
+    retell_agent_id: "", google_calendar_id: "", webhook_make_url: "", telefono_asignado: "",
+    plan_nombre: "Plan Básico", precio_base_mensual: "150", limite_minutos_incluidos: "300",
+    limite_mensajes_whatsapp_incluidos: "1000", precio_minuto_extra: "0.25", precio_mensaje_extra: "0.05",
+    minutos_consumidos_mes: "0", mensajes_whatsapp_consumidos_mes: "0",
   })
   const [savingIA, setSavingIA] = useState(false)
   const [savedIA, setSavedIA] = useState(false)
+  const [permisos, setPermisos] = useState({
+    ver_audios: true, ver_transcripciones: true, descargar_pdf: true, ver_precios: true,
+  })
+  const [liquidacion, setLiquidacion] = useState<LiquidacionCliente | null>(null)
+  const [cerrandoCiclo, setCerrandoCiclo] = useState(false)
 
   const cargarTodo = useCallback(async () => {
     if (!id) { setError("ID de cliente no especificado"); setLoading(false); return }
@@ -199,11 +208,25 @@ function ClienteDetalleContent() {
         instagram: c.instagram || "", linkedin: c.linkedin || "", facebook: c.facebook || "",
       })
       setIaData({
-        retell_agent_id: c.retell_agent_id || "", ia_phone_number: c.ia_phone_number || "",
-        calendar_id: c.calendar_id || "", make_webhook_url: c.make_webhook_url || "",
-        minutos_contratados: String(c.minutos_contratados ?? 0),
-        precio_minuto_extra: String(c.precio_minuto_extra ?? 0),
+        retell_agent_id: c.retell_agent_id || "", google_calendar_id: c.google_calendar_id || "",
+        webhook_make_url: c.webhook_make_url || "", telefono_asignado: c.telefono_asignado || "",
+        plan_nombre: c.plan_nombre || "Plan Básico",
+        precio_base_mensual: String(c.precio_base_mensual ?? 150),
+        limite_minutos_incluidos: String(c.limite_minutos_incluidos ?? 300),
+        limite_mensajes_whatsapp_incluidos: String(c.limite_mensajes_whatsapp_incluidos ?? 1000),
+        precio_minuto_extra: String(c.precio_minuto_extra ?? 0.25),
+        precio_mensaje_extra: String(c.precio_mensaje_extra ?? 0.05),
+        minutos_consumidos_mes: String(c.minutos_consumidos_mes ?? 0),
+        mensajes_whatsapp_consumidos_mes: String(c.mensajes_whatsapp_consumidos_mes ?? 0),
       })
+      if (c.permisos_portal) {
+        setPermisos({
+          ver_audios: c.permisos_portal.ver_audios !== false,
+          ver_transcripciones: c.permisos_portal.ver_transcripciones !== false,
+          descargar_pdf: c.permisos_portal.descargar_pdf !== false,
+          ver_precios: c.permisos_portal.ver_precios !== false,
+        })
+      }
     } catch (err) {
       console.error("Error cargando cliente:", err)
       setError("No se pudo cargar el cliente.")
@@ -213,6 +236,17 @@ function ClienteDetalleContent() {
   }, [id, supabase])
 
   useEffect(() => { cargarTodo() }, [cargarTodo])
+
+  // Liquidación en vivo del plan financiero
+  useEffect(() => {
+    if (!id) return
+    supabase
+      .rpc("calcular_liquidacion_cliente", { p_cliente_id: id })
+      .then(({ data, error }: { data: unknown; error: any }) => {
+        if (!error) setLiquidacion(data as LiquidacionCliente)
+      })
+      .catch(() => {})
+  }, [id, supabase])
 
   // === HANDLERS INFO GENERAL ===
 
@@ -276,7 +310,7 @@ function ClienteDetalleContent() {
     }
   }
 
-  // === INTEGRACIONES IA ===
+  // === INTEGRACIONES IA / PLAN FINANCIERO / ACCESO ===
 
   const handleSaveIA = async () => {
     if (!id) return
@@ -285,45 +319,114 @@ function ClienteDetalleContent() {
     try {
       const payload = {
         retell_agent_id: iaData.retell_agent_id.trim() || null,
-        ia_phone_number: iaData.ia_phone_number.trim() || null,
-        calendar_id: iaData.calendar_id.trim() || null,
-        make_webhook_url: iaData.make_webhook_url.trim() || null,
-        minutos_contratados: Number(iaData.minutos_contratados) || 0,
+        google_calendar_id: iaData.google_calendar_id.trim() || null,
+        webhook_make_url: iaData.webhook_make_url.trim() || null,
+        telefono_asignado: iaData.telefono_asignado.trim() || null,
+        plan_nombre: iaData.plan_nombre.trim() || "Plan Básico",
+        precio_base_mensual: Number(iaData.precio_base_mensual) || 0,
+        limite_minutos_incluidos: Number(iaData.limite_minutos_incluidos) || 0,
+        limite_mensajes_whatsapp_incluidos: Number(iaData.limite_mensajes_whatsapp_incluidos) || 0,
         precio_minuto_extra: Number(iaData.precio_minuto_extra) || 0,
+        precio_mensaje_extra: Number(iaData.precio_mensaje_extra) || 0,
+        minutos_consumidos_mes: Number(iaData.minutos_consumidos_mes) || 0,
+        mensajes_whatsapp_consumidos_mes: Number(iaData.mensajes_whatsapp_consumidos_mes) || 0,
       }
       const { error } = await supabase.from("clientes").update(payload).eq("id", id)
       if (error) throw error
       setCliente({ ...cliente!, ...payload } as Cliente)
       setSavedIA(true)
       setTimeout(() => setSavedIA(false), 2500)
+      await refrescarLiquidacion()
     } catch (err) {
-      console.error("Error guardando integraciones:", err)
-      alert("No se pudieron guardar las integraciones.")
+      console.error("Error guardando:", err)
+      alert("No se pudo guardar la configuración.")
     } finally {
       setSavingIA(false)
     }
   }
 
-  // === FACTURAR OVERAGE ===
+  const guardarPermisos = async (nuevos: typeof permisos) => {
+    if (!id) return
+    setPermisos(nuevos)
+    try {
+      await supabase.from("clientes").update({ permisos_portal: nuevos }).eq("id", id)
+    } catch {
+      console.error("Error guardando permisos")
+    }
+  }
 
-  const facturarOverage = async () => {
+  const togglePermiso = (key: keyof typeof permisos) => {
+    guardarPermisos({ ...permisos, [key]: !permisos[key] })
+  }
+
+  const refrescarLiquidacion = async () => {
     if (!id) return
     try {
-      const { data, error } = await supabase.rpc("facturar_overage", { p_cliente_id: id })
+      const { data, error } = await supabase.rpc("calcular_liquidacion_cliente", { p_cliente_id: id })
       if (error) throw error
-      const r = data as { ok: boolean; error?: string; numero?: string; minutos_extra?: number }
+      setLiquidacion(data as LiquidacionCliente)
+    } catch {
+      setLiquidacion(null)
+    }
+  }
+
+  const generarFacturaExcesos = async () => {
+    if (!id) return
+    try {
+      const { data, error } = await supabase.rpc("generar_factura_excesos", { p_cliente_id: id })
+      if (error) throw error
+      const r = data as { ok: boolean; error?: string; numero?: string; total?: number }
       if (!r.ok) {
         alert(
-          r.error === "sin_overage" ? "Este cliente no tiene minutos extra este mes."
-          : r.error === "ya_facturado" ? "Ya existe una factura de overage para este mes."
-          : "No se pudo generar la factura de overage."
+          r.error === "ya_facturado" ? "Ya existe una factura de excesos para este mes."
+          : r.error === "sin_importes" ? "No hay importes que facturar este mes."
+          : "No se pudo generar la factura."
         )
         return
       }
-      alert(`Factura ${r.numero} creada en borrador: ${r.minutos_extra} min extra.`)
+      alert(`Factura ${r.numero} creada en borrador por ${r.total?.toFixed(2)} € (ver Facturación).`)
     } catch (err) {
       console.error(err)
-      alert("No se pudo facturar el overage.")
+      alert("No se pudo generar la factura.")
+    }
+  }
+
+  const cerrarCiclo = async () => {
+    if (!id || !confirm("¿Cerrar el ciclo mensual? Se historiza el consumo y se resetean los contadores a 0.")) return
+    setCerrandoCiclo(true)
+    try {
+      const { data, error } = await supabase.rpc("cerrar_ciclo_mensual_cliente", { p_cliente_id: id })
+      if (error) throw error
+      const r = data as { ok: boolean; error?: string; periodo?: string; total_facturado?: number }
+      if (!r.ok) {
+        alert(r.error === "ciclo_ya_cerrado" ? `El ciclo de ${r.periodo} ya estaba cerrado.` : "No se pudo cerrar el ciclo.")
+        return
+      }
+      alert(`Ciclo ${r.periodo} cerrado. Total del periodo: ${r.total_facturado?.toFixed(2)} €`)
+      setIaData((d) => ({ ...d, minutos_consumidos_mes: "0", mensajes_whatsapp_consumidos_mes: "0" }))
+      await cargarTodo()
+      await refrescarLiquidacion()
+    } catch (err) {
+      console.error(err)
+      alert("No se pudo cerrar el ciclo.")
+    } finally {
+      setCerrandoCiclo(false)
+    }
+  }
+
+  const resetPasswordCliente = async () => {
+    if (!cliente?.email) {
+      alert("Este cliente no tiene email configurado.")
+      return
+    }
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(cliente.email, {
+        redirectTo: `${window.location.origin}/login`,
+      })
+      if (error) throw error
+      alert(`Email de restablecimiento enviado a ${cliente.email}.`)
+    } catch {
+      alert("No se pudo enviar el email de restablecimiento.")
     }
   }
 
@@ -925,78 +1028,219 @@ function ClienteDetalleContent() {
           </Card>
         </TabsContent>
 
-        {/* ===== TAB: INTEGRACIONES IA ===== */}
+        {/* ===== TAB: INTEGRACIONES IA / PLAN / ACCESO ===== */}
         <TabsContent value="integraciones" className="space-y-4">
+          {/* Telemetría financiera en vivo */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0">
-              <CardTitle className="flex items-center gap-2"><Bot className="h-5 w-5 text-accent" /> Integraciones IA</CardTitle>
-              <div className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2"><CircleDollarSign className="h-5 w-5 text-accent" /> Liquidación del mes</CardTitle>
+              <div className="flex flex-wrap items-center gap-2">
                 {savedIA && <span className="text-xs text-green-400">Guardado ✓</span>}
-                <Button variant="outline" size="sm" onClick={facturarOverage}>
-                  <CircleDollarSign className="h-3.5 w-3.5 mr-1.5" /> Facturar overage
+                <Button variant="outline" size="sm" onClick={generarFacturaExcesos}>
+                  <Receipt className="h-3.5 w-3.5 mr-1.5" /> Generar factura con excesos
                 </Button>
-                <Button size="sm" onClick={handleSaveIA} disabled={savingIA}>
-                  <Save className="h-3.5 w-3.5 mr-1.5" /> {savingIA ? "Guardando..." : "Guardar"}
+                <Button variant="outline" size="sm" onClick={cerrarCiclo} disabled={cerrandoCiclo}>
+                  <CalendarCheck className="h-3.5 w-3.5 mr-1.5" /> {cerrandoCiclo ? "Cerrando..." : "Cerrar ciclo mensual"}
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-xs text-muted-foreground">
-                Parámetros técnicos que enlazan este cliente con sus agentes externos. Se usan para asociar de forma automática leads, llamadas y citas.
-              </p>
+            <CardContent className="space-y-5">
+              {liquidacion && liquidacion.ok ? (
+                <>
+                  {/* Barras de consumo */}
+                  <div className="grid sm:grid-cols-2 gap-5">
+                    <div>
+                      <div className="flex justify-between text-xs mb-1.5">
+                        <span className="text-muted-foreground">Minutos de voz</span>
+                        <span className="tabular-nums font-medium">
+                          {liquidacion.minutos_consumidos_mes} / {liquidacion.limite_minutos_incluidos} min
+                        </span>
+                      </div>
+                      <BarraConsumo
+                        valor={liquidacion.minutos_consumidos_mes || 0}
+                        limite={liquidacion.limite_minutos_incluidos || 1}
+                      />
+                    </div>
+                    <div>
+                      <div className="flex justify-between text-xs mb-1.5">
+                        <span className="text-muted-foreground">Mensajes WhatsApp</span>
+                        <span className="tabular-nums font-medium">
+                          {liquidacion.mensajes_whatsapp_consumidos_mes} / {liquidacion.limite_mensajes_whatsapp_incluidos} msg
+                        </span>
+                      </div>
+                      <BarraConsumo
+                        valor={liquidacion.mensajes_whatsapp_consumidos_mes || 0}
+                        limite={liquidacion.limite_mensajes_whatsapp_incluidos || 1}
+                      />
+                    </div>
+                  </div>
 
+                  {/* Desglose de importes */}
+                  <div className="rounded-xl border border-white/5 p-4 space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Cuota base — {liquidacion.plan_nombre}</span>
+                      <span className="tabular-nums">{formatCurrency(liquidacion.precio_base_mensual || 0)}</span>
+                    </div>
+                    {(liquidacion.minutos_extra || 0) > 0 && (
+                      <div className="flex justify-between text-amber-400">
+                        <span>Minutos extra ({liquidacion.minutos_extra} × {liquidacion.precio_minuto_extra} €)</span>
+                        <span className="tabular-nums">{formatCurrency(liquidacion.coste_minutos_extra || 0)}</span>
+                      </div>
+                    )}
+                    {(liquidacion.mensajes_extra || 0) > 0 && (
+                      <div className="flex justify-between text-amber-400">
+                        <span>Mensajes extra ({liquidacion.mensajes_extra} × {liquidacion.precio_mensaje_extra} €)</span>
+                        <span className="tabular-nums">{formatCurrency(liquidacion.coste_mensajes_extra || 0)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between pt-2 border-t border-white/10 text-base font-bold">
+                      <span>Total del mes</span>
+                      <span className="text-gradient tabular-nums">{formatCurrency(liquidacion.total_final || 0)}</span>
+                    </div>
+                    <div className="flex justify-between text-xs text-muted-foreground pt-1">
+                      <span>Saldo pendiente de pago</span>
+                      <span className={`tabular-nums ${(liquidacion.saldo_pendiente_pago || 0) > 0 ? "text-red-400" : "text-green-400"}`}>
+                        {formatCurrency(liquidacion.saldo_pendiente_pago || 0)}
+                      </span>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  La liquidación en vivo estará disponible al aplicar la migración del plan financiero.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Plan y parámetros técnicos */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+              <CardTitle className="flex items-center gap-2"><Bot className="h-5 w-5 text-accent" /> Plan e integraciones IA</CardTitle>
+              <Button size="sm" onClick={handleSaveIA} disabled={savingIA}>
+                <Save className="h-3.5 w-3.5 mr-1.5" /> {savingIA ? "Guardando..." : "Guardar"}
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Retell Agent ID</Label>
-                  <Input
-                    value={iaData.retell_agent_id}
-                    onChange={(e) => setIaData({ ...iaData, retell_agent_id: e.target.value })}
-                    placeholder="agent_xxxxxxxx"
-                    className="font-mono text-sm"
-                  />
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Nombre del plan</Label>
+                  <Input value={iaData.plan_nombre} onChange={(e) => setIaData({ ...iaData, plan_nombre: e.target.value })} />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Teléfono del asistente</Label>
-                  <Input
-                    value={iaData.ia_phone_number}
-                    onChange={(e) => setIaData({ ...iaData, ia_phone_number: e.target.value })}
-                    placeholder="+34 600 000 000"
-                    className="font-mono text-sm"
-                  />
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Cuota base mensual (€)</Label>
+                  <Input type="number" min="0" step="1" value={iaData.precio_base_mensual} onChange={(e) => setIaData({ ...iaData, precio_base_mensual: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Minutos de voz incluidos</Label>
+                  <Input type="number" min="0" value={iaData.limite_minutos_incluidos} onChange={(e) => setIaData({ ...iaData, limite_minutos_incluidos: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Mensajes WhatsApp incluidos</Label>
+                  <Input type="number" min="0" value={iaData.limite_mensajes_whatsapp_incluidos} onChange={(e) => setIaData({ ...iaData, limite_mensajes_whatsapp_incluidos: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Precio minuto extra (€)</Label>
+                  <Input type="number" min="0" step="0.01" value={iaData.precio_minuto_extra} onChange={(e) => setIaData({ ...iaData, precio_minuto_extra: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Precio mensaje extra (€)</Label>
+                  <Input type="number" min="0" step="0.01" value={iaData.precio_mensaje_extra} onChange={(e) => setIaData({ ...iaData, precio_mensaje_extra: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Minutos consumidos este mes</Label>
+                  <Input type="number" min="0" value={iaData.minutos_consumidos_mes} onChange={(e) => setIaData({ ...iaData, minutos_consumidos_mes: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Mensajes consumidos este mes</Label>
+                  <Input type="number" min="0" value={iaData.mensajes_whatsapp_consumidos_mes} onChange={(e) => setIaData({ ...iaData, mensajes_whatsapp_consumidos_mes: e.target.value })} />
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-white/5 grid sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Retell Agent ID</Label>
+                  <Input value={iaData.retell_agent_id} onChange={(e) => setIaData({ ...iaData, retell_agent_id: e.target.value })} placeholder="agent_xxxxxxxx" className="font-mono text-sm" />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-xs uppercase tracking-wider text-muted-foreground">Google Calendar ID</Label>
-                  <Input
-                    value={iaData.calendar_id}
-                    onChange={(e) => setIaData({ ...iaData, calendar_id: e.target.value })}
-                    placeholder="cliente@group.calendar.google.com"
-                    className="font-mono text-sm"
-                  />
+                  <Input value={iaData.google_calendar_id} onChange={(e) => setIaData({ ...iaData, google_calendar_id: e.target.value })} placeholder="cliente@group.calendar.google.com" className="font-mono text-sm" />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-xs uppercase tracking-wider text-muted-foreground">Webhook Make.com</Label>
-                  <Input
-                    value={iaData.make_webhook_url}
-                    onChange={(e) => setIaData({ ...iaData, make_webhook_url: e.target.value })}
-                    placeholder="https://hook.eu2.make.com/..."
-                    className="font-mono text-sm"
-                  />
+                  <Input value={iaData.webhook_make_url} onChange={(e) => setIaData({ ...iaData, webhook_make_url: e.target.value })} placeholder="https://hook.eu2.make.com/..." className="font-mono text-sm" />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Minutos contratados / mes</Label>
-                  <Input
-                    type="number" min="0"
-                    value={iaData.minutos_contratados}
-                    onChange={(e) => setIaData({ ...iaData, minutos_contratados: e.target.value })}
-                  />
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Teléfono asignado</Label>
+                  <Input value={iaData.telefono_asignado} onChange={(e) => setIaData({ ...iaData, telefono_asignado: e.target.value })} placeholder="+34 600 000 000" className="font-mono text-sm" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Acceso del cliente al portal */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><UserCog className="h-5 w-5" /> Acceso del cliente</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Email vinculado (login)</Label>
+                  <Input value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="cliente@empresa.com" />
+                  <p className="text-[0.65rem] text-muted-foreground">
+                    El cliente inicia sesión con este correo. Guárdalo desde la pestaña de información general o aquí con «Guardar plan».
+                  </p>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Precio min. extra (€)</Label>
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Usuario de Supabase Auth</Label>
                   <Input
-                    type="number" min="0" step="0.05"
-                    value={iaData.precio_minuto_extra}
-                    onChange={(e) => setIaData({ ...iaData, precio_minuto_extra: e.target.value })}
+                    value={cliente?.usuario_auth_id || ""}
+                    readOnly
+                    placeholder="Sin usuario vinculado"
+                    className="font-mono text-xs"
                   />
+                  <Button variant="outline" size="sm" onClick={resetPasswordCliente} disabled={!cliente?.email}>
+                    <KeyRound className="h-3.5 w-3.5 mr-1.5" /> Enviar email de reset de contraseña
+                  </Button>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-white/5">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground mb-3">Permisos del portal</p>
+                <div className="grid sm:grid-cols-2 gap-2">
+                  {([
+                    ["ver_audios", "Ver grabaciones de audio"],
+                    ["ver_transcripciones", "Ver transcripciones"],
+                    ["descargar_pdf", "Descargar informes PDF"],
+                    ["ver_precios", "Ver tarifas y precios"],
+                  ] as const).map(([key, label]) => (
+                    <button
+                      key={key}
+                      onClick={() => togglePermiso(key)}
+                      className={cn(
+                        "flex items-center justify-between rounded-xl border px-4 py-3 text-sm transition-colors text-left",
+                        permisos[key]
+                          ? "border-primary/40 bg-primary/10"
+                          : "border-white/10 bg-white/[0.02] text-muted-foreground"
+                      )}
+                    >
+                      <span>{label}</span>
+                      <span
+                        className={cn(
+                          "relative h-5 w-9 rounded-pill transition-colors shrink-0 ml-3",
+                          permisos[key] ? "bg-arena-gradient" : "bg-white/10"
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            "absolute top-0.5 h-4 w-4 rounded-full bg-white transition-all",
+                            permisos[key] ? "left-[1.15rem]" : "left-0.5"
+                          )}
+                        />
+                      </span>
+                    </button>
+                  ))}
                 </div>
               </div>
             </CardContent>
@@ -1487,6 +1731,24 @@ function ClienteDetalleContent() {
 }
 
 // === SUBCOMPONENTES ===
+
+// Barra de consumo: cian dentro del cupo, ámbar al 80%+, rojo en exceso
+function BarraConsumo({ valor, limite }: { valor: number; limite: number }) {
+  const pct = Math.min(100, Math.round((valor / Math.max(1, limite)) * 100))
+  const exceso = valor > limite
+  const cerca = pct >= 80 && !exceso
+  return (
+    <div className="h-3 bg-white/10 rounded-full overflow-hidden">
+      <div
+        className={cn(
+          "h-full rounded-full transition-all",
+          exceso ? "bg-red-400" : cerca ? "bg-amber-400" : "bg-arena-gradient"
+        )}
+        style={{ width: `${Math.max(pct, valor > 0 ? 4 : 0)}%` }}
+      />
+    </div>
+  )
+}
 
 function CampoInfo({ label, value }: { label: string; value: string }) {
   return (
