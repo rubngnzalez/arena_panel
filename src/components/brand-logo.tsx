@@ -14,6 +14,7 @@ export function basePath(): string {
 
 const LOGO_OSCURO = "/branding/logo.png"       // logo claro para fondos oscuros
 const LOGO_CLARO = "/branding/logo-dark.png"   // logo oscuro para fondo claro
+export const TEMA_CLARO_ACTIVO_EVENTO = "arena-theme-changed"
 
 function usarTemaClaro(): boolean {
   if (typeof document === "undefined") return false
@@ -23,23 +24,28 @@ function usarTemaClaro(): boolean {
 interface BrandLogoProps {
   className?: string
   imgClassName?: string
-  /** Tamaño del fallback tipográfico A13 */
+  /** Clases extra del wordmark si no existen ficheros de logo */
   fallbackSize?: string
 }
 
 /**
- * Logo de marca: usa logo.png en temas oscuros y logo-dark.png en el
- * tema claro (si existen); si no, fallback «A13».
- * Reacciona al cambio de tema observando la clase light de <html>.
+ * Logo de marca: logo.png en temas oscuros, logo-dark.png en el claro.
+ * - Sin flash de contenido sustituto mientras comprueba qué ficheros existen
+ *   (no renderiza nada hasta saberlo).
+ * - Reacciona al cambio de tema por evento (setTheme) y observando la
+ *   clase light de <html> (anti-flash script / applyTheme directos).
+ * - Si no hubiera logos, muestra el wordmark «Arena13».
  */
-export function BrandLogo({ className, imgClassName, fallbackSize = "text-3xl" }: BrandLogoProps) {
+export function BrandLogo({ className, imgClassName, fallbackSize = "text-2xl" }: BrandLogoProps) {
   const [disponibles, setDisponibles] = useState<{ oscuro: boolean; claro: boolean } | null>(null)
   const [esClaro, setEsClaro] = useState(false)
 
   useEffect(() => {
     let vivo = true
-    // Comprobar en cada montaje (sin caché negativa: los ficheros pueden
-    // añadirse después del primer render)
+
+    const sincronizarTema = () => setEsClaro(usarTemaClaro())
+
+    // Comprobar ficheros en cada montaje (sin caché negativa)
     Promise.all([
       fetch(basePath() + LOGO_OSCURO, { method: "HEAD" }).then((r) => r.ok).catch(() => false),
       fetch(basePath() + LOGO_CLARO, { method: "HEAD" }).then((r) => r.ok).catch(() => false),
@@ -47,19 +53,24 @@ export function BrandLogo({ className, imgClassName, fallbackSize = "text-3xl" }
       if (vivo) setDisponibles({ oscuro, claro })
     })
 
-    setEsClaro(usarTemaClaro())
-    const obs = new MutationObserver(() => setEsClaro(usarTemaClaro()))
+    sincronizarTema()
+
+    // Doble mecanismo de reacción al cambio de tema
+    window.addEventListener(TEMA_CLARO_ACTIVO_EVENTO, sincronizarTema)
+    const obs = new MutationObserver(sincronizarTema)
     obs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] })
+
     return () => {
       vivo = false
+      window.removeEventListener(TEMA_CLARO_ACTIVO_EVENTO, sincronizarTema)
       obs.disconnect()
     }
   }, [])
 
-  // Selección: la versión del tema si existe; si solo hay una, esa; si no, fallback
+  // Selección: la versión del tema si existe; si solo hay una, esa; si no, wordmark
   const src =
     disponibles === null
-      ? null
+      ? null // comprobando: no renderizar nada (evita flash)
       : esClaro
         ? disponibles.claro
           ? LOGO_CLARO
@@ -76,8 +87,10 @@ export function BrandLogo({ className, imgClassName, fallbackSize = "text-3xl" }
           alt="Arena13"
           className={cn("h-10 w-auto object-contain", imgClassName)}
         />
+      ) : disponibles === null ? (
+        <span aria-hidden className={cn("h-10 w-20", imgClassName)} />
       ) : (
-        <span className={cn("font-semibold tracking-tight text-gradient", fallbackSize)}>A13</span>
+        <span className={cn("font-medium tracking-tight text-gradient", fallbackSize)}>Arena13</span>
       )}
     </span>
   )

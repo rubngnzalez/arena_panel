@@ -302,6 +302,10 @@ export function setTheme(themeId: string) {
   const theme = getThemeById(themeId)
   localStorage.setItem(STORAGE_KEY, themeId)
   applyTheme(theme)
+  // Avisar a componentes sensibles al tema (p. ej. BrandLogo) del cambio
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("arena-theme-changed", { detail: { themeId, isLight: theme.isLight } }))
+  }
 }
 
 export const ANTI_FLASH_SCRIPT = `

@@ -113,7 +113,7 @@ function PresupuestoPublicoContent() {
       <div className="max-w-3xl mx-auto space-y-6">
         {/* Marca */}
         <div className="text-center">
-          <span className="text-3xl font-semibold tracking-tight text-gradient">A13</span>
+          <span className="text-2xl font-semibold tracking-tight">Arena<span className="text-gradient">13</span></span>
           <p className="text-xs text-muted-foreground tracking-widest2 uppercase mt-1">
             Arena13 · Diseño de Producto Digital &amp; IA
           </p>
