@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation"
 import { isFeatureEnabled } from "@/lib/features"
 import { cn } from "@/lib/utils"
 import { getPanelConfig, type PanelConfig } from "@/lib/panel-config"
+import { BrandLogo } from "@/components/brand-logo"
 import type { Rol } from "@/lib/roles"
 import {
   Home, Users, Briefcase, FolderKanban, Settings, X, LogOut, Layers,
@@ -107,28 +108,35 @@ export function Sidebar({ user, rol = "admin", onCloseMobile, onLogout, isMobile
 
   const sidebarContent = (
     <>
-      {/* Logo / Header */}
+      {/* Logo / Header — arriba a la izquierda */}
       <div className={cn(
-        "p-6",
-        isMobile ? "flex items-center justify-between" : "flex justify-center"
+        "p-5 pb-4",
+        isMobile ? "flex items-center justify-between" : "flex items-center"
       )}>
-        <Link href={homeHref} className="group relative flex items-center justify-center" aria-label={panelNombre}>
+        <Link href={homeHref} className="group relative flex items-center" aria-label={panelNombre}>
           {/* Halo neón detrás del logo */}
           <span
             aria-hidden
-            className="absolute h-12 w-12 rounded-full bg-arena-gradient blur-2xl opacity-90 animate-arena-neon-halo"
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-14 w-14 rounded-full bg-arena-gradient blur-2xl opacity-50 animate-arena-neon-halo"
           />
           {panelConfig.logoUrl ? (
             <img
               src={panelConfig.logoUrl}
               alt={panelNombre}
-              className="relative h-32 w-32 object-contain animate-arena-float drop-shadow-[0_0_8px_rgba(120,125,255,0.3)]"
+              className="relative h-10 w-10 object-contain drop-shadow-[0_0_8px_rgba(120,125,255,0.3)]"
             />
           ) : (
-            <span className="relative text-8xl font-semibold tracking-tight animate-arena-float text-gradient drop-shadow-[0_0_10px_rgba(120,125,255,0.55)]">
-              A13
-            </span>
+            <BrandLogo
+              className="relative"
+              imgClassName="h-10 drop-shadow-[0_0_8px_rgba(120,125,255,0.3)]"
+              fallbackSize="text-2xl drop-shadow-[0_0_10px_rgba(120,125,255,0.55)]"
+            />
           )}
+          <span className="relative ml-3 text-sm font-medium tracking-tight">
+            {panelNombre.includes("13") ? (
+              <>Arena<span className="text-gradient">13</span></>
+            ) : panelNombre}
+          </span>
         </Link>
         {isMobile && onCloseMobile && (
           <button

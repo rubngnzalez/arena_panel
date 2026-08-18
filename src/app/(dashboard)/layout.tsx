@@ -6,6 +6,7 @@ import { useSupabase } from "@/lib/supabase/client"
 import { Sidebar } from "@/components/dashboard/sidebar"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { CommandBar } from "@/components/command-bar"
+import { SplashScreen } from "@/components/splash-screen"
 import { obtenerRol, esRutaPermitidaCliente, type Rol } from "@/lib/roles"
 
 export default function DashboardLayout({
@@ -21,6 +22,7 @@ export default function DashboardLayout({
   const [loading, setLoading] = useState(true)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [unreadNotifications, setUnreadNotifications] = useState(0)
+  const [nombreComercial, setNombreComercial] = useState<string | null>(null)
 
   useEffect(() => {
     const checkUser = async () => {
@@ -34,9 +36,21 @@ export default function DashboardLayout({
       setRol(rolUsuario)
       setLoading(false)
 
-      if (rolUsuario === "cliente" && !esRutaPermitidaCliente(pathname)) {
-        router.replace("/asistentes")
-        return
+      if (rolUsuario === "cliente") {
+        // Nombre comercial del cliente para la cabecera
+        const { data: cli } = await supabase
+          .from("clientes")
+          .select("nombre_comercial, empresa, nombre")
+          .or(`email.eq.${JSON.stringify(session.user.email)},usuario_auth_id.eq.${session.user.id}`)
+          .maybeSingle()
+        if (cli) setNombreComercial(cli.nombre_comercial || cli.empresa || cli.nombre || null)
+
+        if (!esRutaPermitidaCliente(pathname)) {
+          router.replace("/asistentes")
+          return
+        }
+      } else {
+        setNombreComercial(null)
       }
 
       const { count } = await supabase
@@ -66,11 +80,7 @@ export default function DashboardLayout({
   }
 
   if (loading || !rol) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="h-8 w-8 rounded-pill border-2 border-white/10 border-t-primary animate-spin" />
-      </div>
-    )
+    return <SplashScreen texto={rol === "cliente" ? "Cargando tu área…" : "Cargando panel…"} />
   }
 
   return (
@@ -119,9 +129,11 @@ export default function DashboardLayout({
             <div className="py-6 flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground uppercase tracking-widest2 font-light">
-                  {rol === "cliente" ? "Área de cliente" : "Panel de Gestión"}
+                  {rol === "cliente" ? "Área de Cliente" : "Panel de Gestión"}
                 </p>
-                <p className="text-sm text-gradient font-medium mt-0.5">Arena13</p>
+                <p className="text-sm text-gradient font-medium mt-0.5">
+                  {rol === "cliente" && nombreComercial ? nombreComercial : "Arena13"}
+                </p>
               </div>
               <div className="flex items-center gap-2">
                 {rol !== "cliente" && (
@@ -130,7 +142,6 @@ export default function DashboardLayout({
                     búsqueda rápida
                   </span>
                 )}
-                <span className="text-xs text-muted-foreground font-light">Diseño de Producto Digital & IA</span>
                 <span className="h-2 w-2 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.6)]" />
               </div>
             </div>
