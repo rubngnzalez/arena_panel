@@ -128,19 +128,30 @@ export default function DashboardLayout({
           <div className="arena-container">
             <div className="py-6 flex items-center justify-between">
               <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-widest2 font-light">
-                  {rol === "cliente" ? "Área de Cliente" : "Panel de Gestión"}
-                </p>
-                <p className="text-sm text-gradient font-medium mt-0.5">
-                  {rol === "cliente" && nombreComercial ? nombreComercial : "Arena13"}
-                </p>
+                {rol === "cliente" && nombreComercial ? (
+                  <>
+                    <p className="text-xs text-muted-foreground uppercase tracking-widest2 font-light">
+                      Área de Cliente
+                    </p>
+                    <p className="text-sm text-gradient font-medium mt-0.5">{nombreComercial}</p>
+                  </>
+                ) : (
+                  <p className="text-sm text-gradient font-medium tracking-tight">
+                    {nombreComercial || "Arena13"}
+                  </p>
+                )}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 {rol !== "cliente" && (
-                  <span className="hidden xl:inline-flex items-center gap-1.5 text-xs text-muted-foreground font-light mr-2">
-                    <kbd className="rounded-pill border border-white/10 bg-white/5 px-1.5 py-0.5 text-[0.65rem]">Ctrl K</kbd>
-                    búsqueda rápida
-                  </span>
+                  <>
+                    <span className="hidden xl:inline-flex items-center gap-1.5 text-xs text-muted-foreground font-light">
+                      <kbd className="rounded-pill border border-white/10 bg-white/5 px-1.5 py-0.5 text-[0.65rem]">Ctrl K</kbd>
+                      búsqueda rápida
+                    </span>
+                    <span className="text-xs text-muted-foreground font-light uppercase tracking-widest2">
+                      Panel de Gestión
+                    </span>
+                  </>
                 )}
                 <span className="h-2 w-2 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.6)]" />
               </div>

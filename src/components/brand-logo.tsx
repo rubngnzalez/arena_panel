@@ -15,27 +15,6 @@ export function basePath(): string {
 const LOGO_OSCURO = "/branding/logo.png"       // logo claro para fondos oscuros
 const LOGO_CLARO = "/branding/logo-dark.png"   // logo oscuro para fondo claro
 
-/** Comprueba (una vez por sesión) qué ficheros de branding existen. */
-let cache: { oscuro: boolean; claro: boolean } | null = null
-
-async function comprobarLogos() {
-  if (cache) return cache
-  const head = async (url: string) => {
-    try {
-      const r = await fetch(url, { method: "HEAD" })
-      return r.ok
-    } catch {
-      return false
-    }
-  }
-  const [oscuro, claro] = await Promise.all([
-    head(basePath() + LOGO_OSCURO),
-    head(basePath() + LOGO_CLARO),
-  ])
-  cache = { oscuro, claro }
-  return cache
-}
-
 function usarTemaClaro(): boolean {
   if (typeof document === "undefined") return false
   return document.documentElement.classList.contains("light")
@@ -49,31 +28,51 @@ interface BrandLogoProps {
 }
 
 /**
- * Logo de marca arriba-izquierda. Usa logo.png en temas oscuros y
- * logo-dark.png en el tema claro (si existen); si no, fallback «A13».
+ * Logo de marca: usa logo.png en temas oscuros y logo-dark.png en el
+ * tema claro (si existen); si no, fallback «A13».
+ * Reacciona al cambio de tema observando la clase light de <html>.
  */
 export function BrandLogo({ className, imgClassName, fallbackSize = "text-3xl" }: BrandLogoProps) {
-  const [disponibles, setDisponibles] = useState<{ oscuro: boolean; claro: boolean } | null>(cache)
+  const [disponibles, setDisponibles] = useState<{ oscuro: boolean; claro: boolean } | null>(null)
   const [esClaro, setEsClaro] = useState(false)
 
   useEffect(() => {
-    comprobarLogos().then(setDisponibles)
+    let vivo = true
+    // Comprobar en cada montaje (sin caché negativa: los ficheros pueden
+    // añadirse después del primer render)
+    Promise.all([
+      fetch(basePath() + LOGO_OSCURO, { method: "HEAD" }).then((r) => r.ok).catch(() => false),
+      fetch(basePath() + LOGO_CLARO, { method: "HEAD" }).then((r) => r.ok).catch(() => false),
+    ]).then(([oscuro, claro]) => {
+      if (vivo) setDisponibles({ oscuro, claro })
+    })
+
     setEsClaro(usarTemaClaro())
-    // Observar cambios de tema (applyTheme añade/quita la clase light en <html>)
     const obs = new MutationObserver(() => setEsClaro(usarTemaClaro()))
     obs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] })
-    return () => obs.disconnect()
+    return () => {
+      vivo = false
+      obs.disconnect()
+    }
   }, [])
 
-  const usarLogo = esClaro
-    ? disponibles?.claro && disponibles.oscuro ? LOGO_CLARO : disponibles?.oscuro ? LOGO_OSCURO : null
-    : disponibles?.oscuro ? LOGO_OSCURO : null
+  // Selección: la versión del tema si existe; si solo hay una, esa; si no, fallback
+  const src =
+    disponibles === null
+      ? null
+      : esClaro
+        ? disponibles.claro
+          ? LOGO_CLARO
+          : disponibles.oscuro ? LOGO_OSCURO : null
+        : disponibles.oscuro
+          ? LOGO_OSCURO
+          : disponibles.claro ? LOGO_CLARO : null
 
   return (
     <span className={cn("relative inline-flex items-center justify-center", className)}>
-      {usarLogo ? (
+      {src ? (
         <img
-          src={basePath() + usarLogo}
+          src={basePath() + src}
           alt="Arena13"
           className={cn("h-10 w-auto object-contain", imgClassName)}
         />
