@@ -60,6 +60,13 @@ export interface Cliente {
   // Acceso y portal
   usuario_auth_id?: string
   permisos_portal?: PermisoPortal
+  // Autoservicio del cliente (mi-configuracion)
+  nombre_comercial?: string
+  tema_preferido?: 'dark_pure' | 'dark_slate' | 'light_clean'
+  horario_atencion_texto?: string
+  notas_conocimiento_ia?: string
+  alerta_email_citas?: boolean
+  alerta_email_urgente?: boolean
   // Integraciones IA
   retell_agent_id?: string
   google_calendar_id?: string

@@ -1,6 +1,6 @@
 export type Rol = "propietario" | "admin" | "editor" | "cliente"
 
-export const RUTAS_CLIENTE = ["/asistentes", "/consumo", "/documentos", "/citas"]
+export const RUTAS_CLIENTE = ["/asistentes", "/consumo", "/documentos", "/citas", "/mi-configuracion"]
 
 interface QueryableSupabase {
   from: (table: string) => {

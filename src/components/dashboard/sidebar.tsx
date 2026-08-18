@@ -74,6 +74,12 @@ const clienteSections: NavSection[] = [
       { name: "Mis Documentos", href: "/documentos", icon: FileText },
     ],
   },
+  {
+    title: "Preferencias",
+    items: [
+      { name: "Configuración", href: "/mi-configuracion", icon: Settings },
+    ],
+  },
 ]
 
 export function Sidebar({ user, rol = "admin", onCloseMobile, onLogout, isMobile = false }: SidebarProps) {
