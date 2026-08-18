@@ -8,6 +8,23 @@ CREATE SCHEMA IF NOT EXISTS arena_panel;
 SET search_path TO arena_panel, public, extensions;
 
 -- ============================================
+-- 0-bis. FUNCIÓN: is_editor (admin o editor)
+--      (misma convención que is_admin de la 007)
+-- ============================================
+CREATE OR REPLACE FUNCTION arena_panel.is_editor()
+RETURNS BOOLEAN
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+SET search_path = arena_panel
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM arena_panel.perfiles_usuario
+    WHERE id = auth.uid() AND rol IN ('admin', 'editor') AND activo = true
+  )
+$$;
+
+-- ============================================
 -- 1. PRESUPUESTOS: columnas de aprobación pública
 -- ============================================
 ALTER TABLE presupuestos ADD COLUMN IF NOT EXISTS token_publico VARCHAR(64);
@@ -48,8 +65,8 @@ DROP POLICY IF EXISTS "Equipo puede gestionar imputaciones" ON imputaciones_hora
 CREATE POLICY "Equipo puede gestionar imputaciones"
   ON imputaciones_horas FOR ALL
   TO authenticated
-  USING (arena_panel.is_admin() OR arena_panel.is_editor())
-  WITH CHECK (arena_panel.is_admin() OR arena_panel.is_editor());
+  USING (arena_panel.is_editor())
+  WITH CHECK (arena_panel.is_editor());
 
 -- ============================================
 -- 4. RPC: obtener_presupuesto_publico(token)
