@@ -352,6 +352,98 @@
 }
 
 /* ============================================
+   TEMA CLARO — adaptación de superficies y textos
+   (html.light la aplican applyTheme() y el script anti-flash)
+   ============================================ */
+html.light .glass {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 4px 24px rgba(15, 23, 42, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+html.light .glass-strong {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  box-shadow: 0 8px 40px rgba(15, 23, 42, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+html.light .arena-card:hover {
+  border-color: rgba(79, 70, 229, 0.35);
+  box-shadow: 0 4px 24px rgba(15, 23, 42, 0.08),
+    0 0 0 1px rgba(79, 70, 229, 0.1);
+}
+
+html.light .arena-btn-outline {
+  color: hsl(var(--foreground));
+  background: rgba(15, 23, 42, 0.02);
+  border: 1px solid rgba(15, 23, 42, 0.15);
+}
+html.light .arena-btn-outline:hover {
+  border-color: rgba(79, 70, 229, 0.55);
+}
+
+html.light .arena-input {
+  color: hsl(var(--foreground));
+}
+
+html.light .arena-badge {
+  border-color: rgba(15, 23, 42, 0.12);
+  background: rgba(15, 23, 42, 0.03);
+}
+
+html.light .bg-grid {
+  background-image: linear-gradient(
+      to right,
+      rgba(79, 70, 229, 0.06) 1px,
+      transparent 1px
+    ),
+    linear-gradient(to bottom, rgba(79, 70, 229, 0.06) 1px, transparent 1px);
+}
+
+/* Utilidades white-* heredadas del diseño oscuro → equivalentes oscuras */
+html.light .border-white\/5 { border-color: rgba(15, 23, 42, 0.06); }
+html.light .border-white\/10 { border-color: rgba(15, 23, 42, 0.1); }
+html.light .border-white\/15 { border-color: rgba(15, 23, 42, 0.14); }
+html.light .border-white\/20 { border-color: rgba(15, 23, 42, 0.16); }
+html.light .border-white\/25 { border-color: rgba(15, 23, 42, 0.2); }
+html.light .border-white\/30 { border-color: rgba(15, 23, 42, 0.24); }
+html.light .bg-white\/5 { background-color: rgba(15, 23, 42, 0.04); }
+html.light .bg-white\/10 { background-color: rgba(15, 23, 42, 0.07); }
+html.light .bg-white\/\[0\.02\] { background-color: rgba(15, 23, 42, 0.02); }
+html.light .bg-white\/\[0\.03\] { background-color: rgba(15, 23, 42, 0.03); }
+html.light .bg-white\/\[0\.04\] { background-color: rgba(15, 23, 42, 0.05); }
+html.light .hover\:bg-white\/\[0\.04\]:hover { background-color: rgba(15, 23, 42, 0.05); }
+html.light .divide-white\/5 > * + * { border-color: rgba(15, 23, 42, 0.08); }
+
+/* Colores de acento -400: sobre blanco quedan pálidos → equivalentes -700 */
+html.light .text-cyan-400 { color: #0e7490; }
+html.light .text-green-400 { color: #15803d; }
+html.light .text-amber-400 { color: #b45309; }
+html.light .text-red-400 { color: #b91c1c; }
+html.light .text-blue-400 { color: #1d4ed8; }
+html.light .text-purple-400 { color: #7e22ce; }
+html.light .text-sky-400 { color: #0369a1; }
+html.light .text-orange-400 { color: #c2410c; }
+html.light .text-gray-400 { color: #4b5563; }
+
+/* Scrollbar y selección para fondo claro */
+html.light ::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.2);
+}
+html.light ::-webkit-scrollbar-thumb:hover {
+  background: rgba(79, 70, 229, 0.5);
+}
+html.light ::selection {
+  background: rgba(79, 70, 229, 0.18);
+  color: hsl(var(--foreground));
+}
+html.light :focus-visible {
+  outline-color: rgba(79, 70, 229, 0.55);
+}
+
+/* ============================================
    PRINT / PDF — documentos limpios en blanco
    ============================================ */
 @media print {

@@ -217,20 +217,20 @@ export const THEMES: Theme[] = [
       cardForeground: "222 47% 11%",
       popover: "0 0% 100%",
       popoverForeground: "222 47% 11%",
-      primary: "238 76% 60%",
+      primary: "238 70% 52%",
       primaryForeground: "0 0% 100%",
       secondary: "220 14% 94%",
       secondaryForeground: "222 47% 11%",
       muted: "220 14% 94%",
       mutedForeground: "220 9% 46%",
-      accent: "198 90% 45%",
+      accent: "198 85% 38%",
       accentForeground: "0 0% 100%",
       border: "220 13% 88%",
       input: "220 13% 88%",
-      ring: "238 76% 60%",
+      ring: "238 70% 52%",
     },
-    gradient: "linear-gradient(90deg, #0ea5e9, #6366f1)",
-    gradientRev: "linear-gradient(90deg, #6366f1, #0ea5e9)",
+    gradient: "linear-gradient(90deg, #0284c7, #4f46e5)",
+    gradientRev: "linear-gradient(90deg, #4f46e5, #0284c7)",
     glowPrimary: "0 0 20px rgba(99, 102, 241, 0.15)",
     glowSecondary: "0 0 20px rgba(14, 165, 233, 0.12)",
     bgGlow1: "rgba(99, 102, 241, 0.08)",
@@ -305,5 +305,5 @@ export function setTheme(themeId: string) {
 }
 
 export const ANTI_FLASH_SCRIPT = `
-(function(){try{var t=localStorage.getItem('${STORAGE_KEY}')||'${DEFAULT_THEME_ID}';var themes=${JSON.stringify(THEMES.map(t=>({id:t.id,isLight:t.isLight,bgSolid:t.bgSolid})))};var th=themes.find(function(x){return x.id===t})||themes[0];var r=document.documentElement;var c={'arena-dark':['0 0% 0%','0 0% 4%','0 0% 100%','0 0% 55%','0 0% 16%','238 100% 75%','198 98% 48%','linear-gradient(90deg, #01a9f2, #787dff)','rgba(120, 125, 255, 0.14)','rgba(1, 169, 242, 0.12)','rgba(120, 125, 255, 0.04)','#000000'],'ocean':['222 47% 5%','222 40% 8%','210 40% 96%','215 25% 55%','222 30% 18%','210 100% 56%','187 85% 43%','linear-gradient(90deg, #14b8c4, #3b82f6)','rgba(59, 130, 246, 0.14)','rgba(20, 184, 196, 0.12)','rgba(59, 130, 246, 0.04)','#06101f'],'emerald':['150 30% 4%','150 25% 7%','140 30% 95%','145 15% 55%','150 18% 18%','142 71% 45%','160 84% 39%','linear-gradient(90deg, #10b981, #84cc16)','rgba(16, 185, 129, 0.14)','rgba(132, 204, 22, 0.10)','rgba(16, 185, 129, 0.04)','#051008'],'sunset':['20 30% 5%','20 25% 8%','30 25% 95%','20 12% 55%','20 15% 18%','24 95% 53%','340 82% 60%','linear-gradient(90deg, #f43f5e, #f97316)','rgba(249, 115, 22, 0.14)','rgba(244, 63, 94, 0.10)','rgba(249, 115, 22, 0.04)','#100c08'],'royal':['270 40% 5%','270 35% 8%','270 30% 95%','270 15% 55%','270 25% 18%','280 85% 65%','320 85% 60%','linear-gradient(90deg, #ec4899, #a855f7)','rgba(168, 85, 247, 0.14)','rgba(236, 72, 153, 0.10)','rgba(168, 85, 247, 0.04)','#0d0814'],'light':['0 0% 98%','0 0% 100%','222 47% 11%','220 9% 46%','220 13% 88%','238 76% 60%','198 90% 45%','linear-gradient(90deg, #0ea5e9, #6366f1)','rgba(99, 102, 241, 0.08)','rgba(14, 165, 233, 0.06)','rgba(99, 102, 241, 0.02)','#f5f5f7']};var v=c[t]||c['arena-dark'];var s=r.style;s.setProperty('--background',v[0]);s.setProperty('--card',v[1]);s.setProperty('--foreground',v[2]);s.setProperty('--muted-foreground',v[3]);s.setProperty('--border',v[4]);s.setProperty('--input',v[4]);s.setProperty('--primary',v[5]);s.setProperty('--ring',v[5]);s.setProperty('--accent',v[6]);s.setProperty('--arena-purple-hsl',v[5]);s.setProperty('--arena-cyan-hsl',v[6]);s.setProperty('--arena-gradient',v[7]);s.setProperty('--arena-gradient-rev',v[7]);s.setProperty('--theme-glow-1',v[8]);s.setProperty('--theme-glow-2',v[9]);s.setProperty('--theme-glow-3',v[10]);s.setProperty('--theme-bg',v[11]);s.setProperty('--arena-glow-purple','0 0 24px '+v[8].replace(/0\\.\\d+/,'0.35')+')');s.setProperty('--arena-glow-cyan','0 0 24px '+v[9].replace(/0\\.\\d+/,'0.3')+')');if(th.isLight){r.classList.remove('dark');r.classList.add('light')}else{r.classList.remove('light');r.classList.add('dark')}}catch(e){}})();
+(function(){try{var t=localStorage.getItem('${STORAGE_KEY}')||'${DEFAULT_THEME_ID}';var themes=${JSON.stringify(THEMES.map(t=>({id:t.id,isLight:t.isLight,bgSolid:t.bgSolid})))};var th=themes.find(function(x){return x.id===t})||themes[0];var r=document.documentElement;var c={'arena-dark':['0 0% 0%','0 0% 4%','0 0% 100%','0 0% 55%','0 0% 16%','238 100% 75%','198 98% 48%','linear-gradient(90deg, #01a9f2, #787dff)','rgba(120, 125, 255, 0.14)','rgba(1, 169, 242, 0.12)','rgba(120, 125, 255, 0.04)','#000000'],'ocean':['222 47% 5%','222 40% 8%','210 40% 96%','215 25% 55%','222 30% 18%','210 100% 56%','187 85% 43%','linear-gradient(90deg, #14b8c4, #3b82f6)','rgba(59, 130, 246, 0.14)','rgba(20, 184, 196, 0.12)','rgba(59, 130, 246, 0.04)','#06101f'],'emerald':['150 30% 4%','150 25% 7%','140 30% 95%','145 15% 55%','150 18% 18%','142 71% 45%','160 84% 39%','linear-gradient(90deg, #10b981, #84cc16)','rgba(16, 185, 129, 0.14)','rgba(132, 204, 22, 0.10)','rgba(16, 185, 129, 0.04)','#051008'],'sunset':['20 30% 5%','20 25% 8%','30 25% 95%','20 12% 55%','20 15% 18%','24 95% 53%','340 82% 60%','linear-gradient(90deg, #f43f5e, #f97316)','rgba(249, 115, 22, 0.14)','rgba(244, 63, 94, 0.10)','rgba(249, 115, 22, 0.04)','#100c08'],'royal':['270 40% 5%','270 35% 8%','270 30% 95%','270 15% 55%','270 25% 18%','280 85% 65%','320 85% 60%','linear-gradient(90deg, #ec4899, #a855f7)','rgba(168, 85, 247, 0.14)','rgba(236, 72, 153, 0.10)','rgba(168, 85, 247, 0.04)','#0d0814'],'light':['0 0% 98%','0 0% 100%','222 47% 11%','220 9% 46%','220 13% 88%','238 70% 52%','198 85% 38%','linear-gradient(90deg, #0284c7, #4f46e5)','rgba(99, 102, 241, 0.08)','rgba(14, 165, 233, 0.06)','rgba(99, 102, 241, 0.02)','#f5f5f7']};var v=c[t]||c['arena-dark'];var s=r.style;s.setProperty('--background',v[0]);s.setProperty('--card',v[1]);s.setProperty('--foreground',v[2]);s.setProperty('--muted-foreground',v[3]);s.setProperty('--border',v[4]);s.setProperty('--input',v[4]);s.setProperty('--primary',v[5]);s.setProperty('--ring',v[5]);s.setProperty('--accent',v[6]);s.setProperty('--arena-purple-hsl',v[5]);s.setProperty('--arena-cyan-hsl',v[6]);s.setProperty('--arena-gradient',v[7]);s.setProperty('--arena-gradient-rev',v[7]);s.setProperty('--theme-glow-1',v[8]);s.setProperty('--theme-glow-2',v[9]);s.setProperty('--theme-glow-3',v[10]);s.setProperty('--theme-bg',v[11]);s.setProperty('--arena-glow-purple','0 0 24px '+v[8].replace(/0\\.\\d+/,'0.35')+')');s.setProperty('--arena-glow-cyan','0 0 24px '+v[9].replace(/0\\.\\d+/,'0.3')+')');if(th.isLight){r.classList.remove('dark');r.classList.add('light')}else{r.classList.remove('light');r.classList.add('dark')}}catch(e){}})();
 `
