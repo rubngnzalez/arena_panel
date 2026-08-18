@@ -12,13 +12,6 @@ export interface FeatureConfig {
 
 export const FEATURES: Record<string, FeatureConfig> = {
   // Gestión
-  portal_cliente: {
-    enabled: true,
-    label: 'Portal del Cliente',
-    description: 'Permite que los clientes accedan a sus propios proyectos y documentos',
-    category: 'gestion',
-  },
-
   tickets_soporte: {
     enabled: true,
     label: 'Tickets de Soporte',
@@ -62,25 +55,11 @@ export const FEATURES: Record<string, FeatureConfig> = {
     category: 'comunicacion',
   },
 
-  banners: {
-    enabled: false,
-    label: 'Banners y Promociones',
-    description: 'Banners promocionales configurables con caducidad',
-    category: 'comunicacion',
-  },
-
   auditoria: {
     enabled: true,
     label: 'Auditoría',
     description: 'Historial de logueos y descargas de la bóveda',
     category: 'analytics',
-  },
-
-  newsletter: {
-    enabled: false,
-    label: 'Newsletter',
-    description: 'Envío de newsletters a clientes',
-    category: 'comunicacion',
   },
 
   // Integraciones

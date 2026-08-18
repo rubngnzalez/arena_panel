@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils"
 import {
   Home, Users, Briefcase, FolderKanban, LifeBuoy, FileText,
   Bell, Settings, Grid3x3, Layers, Calculator, Receipt,
-  BarChart3, ScrollText, Search, CornerDownLeft,
+  BarChart3, ScrollText, Search, CornerDownLeft, Inbox, Bot,
 } from "lucide-react"
 
 interface Command {
@@ -24,6 +24,8 @@ interface Command {
 
 const NAV_COMMANDS: Command[] = [
   { id: "nav-dashboard", label: "Dashboard", section: "Navegación", href: "/dashboard", icon: Home },
+  { id: "nav-inbox", label: "Inbox de leads", section: "Navegación", href: "/inbox", icon: Inbox },
+  { id: "nav-monitor-ia", label: "Monitor IA", section: "Navegación", href: "/monitor-ia", icon: Bot },
   { id: "nav-clientes", label: "Clientes", section: "Navegación", href: "/clientes", icon: Users },
   { id: "nav-pipeline", label: "Pipeline", section: "Navegación", href: "/pipeline", icon: Layers, },
   { id: "nav-servicios", label: "Servicios", section: "Navegación", href: "/servicios", icon: Briefcase },

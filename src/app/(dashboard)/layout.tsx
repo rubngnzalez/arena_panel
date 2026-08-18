@@ -1,12 +1,12 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { useSupabase } from "@/lib/supabase/client"
-import { isFeatureEnabled } from "@/lib/features"
 import { Sidebar } from "@/components/dashboard/sidebar"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { CommandBar } from "@/components/command-bar"
+import { obtenerRol, esRutaPermitidaCliente, type Rol } from "@/lib/roles"
 
 export default function DashboardLayout({
   children,
@@ -14,8 +14,10 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   const router = useRouter()
+  const pathname = usePathname()
   const supabase = useSupabase()
   const [user, setUser] = useState<any>(null)
+  const [rol, setRol] = useState<Rol | null>(null)
   const [loading, setLoading] = useState(true)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [unreadNotifications, setUnreadNotifications] = useState(0)
@@ -28,17 +30,21 @@ export default function DashboardLayout({
         return
       }
       setUser(session.user)
+      const rolUsuario = await obtenerRol(supabase as any, session.user.id)
+      setRol(rolUsuario)
       setLoading(false)
 
-      // Cargar notificaciones no leídas si la feature está activa
-      if (isFeatureEnabled("notificaciones")) {
-        const { count } = await supabase
-          .from("notificaciones")
-          .select("*", { count: "exact", head: true })
-          .eq("leida", false)
-
-        setUnreadNotifications(count || 0)
+      if (rolUsuario === "cliente" && !esRutaPermitidaCliente(pathname)) {
+        router.replace("/asistentes")
+        return
       }
+
+      const { count } = await supabase
+        .from("notificaciones")
+        .select("*", { count: "exact", head: true })
+        .eq("leida", false)
+
+      setUnreadNotifications(count || 0)
     }
 
     checkUser()
@@ -52,14 +58,14 @@ export default function DashboardLayout({
     })
 
     return () => subscription.unsubscribe()
-  }, [router, supabase])
+  }, [router, supabase, pathname])
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
     router.push("/login")
   }
 
-  if (loading) {
+  if (loading || !rol) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="h-8 w-8 rounded-pill border-2 border-white/10 border-t-primary animate-spin" />
@@ -89,7 +95,7 @@ export default function DashboardLayout({
           <div className="relative w-64 h-full">
             <Sidebar
               user={user}
-              unreadNotifications={unreadNotifications}
+              rol={rol}
               onCloseMobile={() => setMobileMenuOpen(false)}
               onLogout={handleLogout}
               isMobile={true}
@@ -101,7 +107,7 @@ export default function DashboardLayout({
       {/* Sidebar desktop */}
       <Sidebar
         user={user}
-        unreadNotifications={unreadNotifications}
+        rol={rol}
         onLogout={handleLogout}
       />
 
@@ -112,14 +118,18 @@ export default function DashboardLayout({
           <div className="arena-container">
             <div className="py-6 flex items-center justify-between">
               <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-widest2 font-light">Panel de Gestión</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-widest2 font-light">
+                  {rol === "cliente" ? "Área de cliente" : "Panel de Gestión"}
+                </p>
                 <p className="text-sm text-gradient font-medium mt-0.5">Arena13</p>
               </div>
               <div className="flex items-center gap-2">
-                <span className="hidden xl:inline-flex items-center gap-1.5 text-xs text-muted-foreground font-light mr-2">
-                  <kbd className="rounded-pill border border-white/10 bg-white/5 px-1.5 py-0.5 text-[0.65rem]">Ctrl K</kbd>
-                  búsqueda rápida
-                </span>
+                {rol !== "cliente" && (
+                  <span className="hidden xl:inline-flex items-center gap-1.5 text-xs text-muted-foreground font-light mr-2">
+                    <kbd className="rounded-pill border border-white/10 bg-white/5 px-1.5 py-0.5 text-[0.65rem]">Ctrl K</kbd>
+                    búsqueda rápida
+                  </span>
+                )}
                 <span className="text-xs text-muted-foreground font-light">Diseño de Producto Digital & IA</span>
                 <span className="h-2 w-2 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.6)]" />
               </div>

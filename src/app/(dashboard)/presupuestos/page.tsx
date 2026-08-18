@@ -196,7 +196,7 @@ export default function PresupuestosPage() {
   const copiarEnlacePublico = async (p: Presupuesto) => {
     const token = await asegurarToken(p)
     if (!token) { setError("No se pudo generar el enlace público."); return }
-    const url = `${window.location.origin}/presupuesto?token=${token}`
+    const url = `${window.location.origin}/p?token=${token}`
     try {
       await navigator.clipboard.writeText(url)
       setCopiado(true)

@@ -46,6 +46,8 @@ export interface Cliente {
   instagram?: string
   linkedin?: string
   facebook?: string
+  // Asistentes IA
+  minutos_contratados?: number
 }
 
 // Documento/material del cliente (descargable)
@@ -338,6 +340,51 @@ export interface ImputacionHoras {
 }
 
 // ============================================
+// Leads (inbox de triaje)
+// ============================================
+export type LeadOrigen = 'retell' | 'whatsapp' | 'formulario' | 'webhook' | 'manual'
+export type LeadEstado = 'nuevo' | 'convertido' | 'archivado' | 'spam'
+export type LeadNivelInteres = 'bajo' | 'medio' | 'alto'
+
+export interface Lead {
+  id: string
+  origen: LeadOrigen
+  nombre?: string
+  email?: string
+  telefono?: string
+  empresa?: string
+  mensaje?: string
+  resumen_ia?: string
+  nivel_interes: LeadNivelInteres
+  estado: LeadEstado
+  metadata?: Record<string, any>
+  created_at: string
+}
+
+// ============================================
+// Interacciones de asistentes IA
+// ============================================
+export interface TurnoTranscripcion {
+  rol: 'asistente' | 'usuario'
+  texto: string
+  t?: number
+}
+
+export interface InteraccionIA {
+  id: string
+  cliente_id?: string
+  cliente?: Pick<Cliente, 'id' | 'nombre' | 'empresa'> | null
+  tipo: 'llamada' | 'chat'
+  origen?: string
+  audio_url?: string
+  duracion_seg?: number
+  transcripcion?: TurnoTranscripcion[]
+  resumen?: string
+  metadata?: Record<string, any>
+  created_at: string
+}
+
+// ============================================
 // Facturación
 // ============================================
 export type FacturaEstado = 'borrador' | 'emitida' | 'pagada' | 'vencida' | 'anulada'
@@ -366,6 +413,7 @@ export interface Factura {
   descuento_porcentaje: number
   iva_porcentaje: number
   metodo_pago?: MetodoPago
+  link_pago?: string
   notas?: string
   created_by?: string
   created_at: string

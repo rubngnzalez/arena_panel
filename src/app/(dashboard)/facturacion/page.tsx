@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select"
 import {
   ArrowLeft, Plus, Trash2, Receipt, Check, Printer, FileText,
-  Copy, Euro, Calendar, AlertTriangle, CheckCircle2, Clock,
+  Copy, Euro, Calendar, AlertTriangle, CheckCircle2, Clock, CreditCard, Link2,
 } from "lucide-react"
 import { formatCurrency, formatDate, getInitials } from "@/lib/utils"
 import type { Factura, FacturaLinea, FacturaEstado, MetodoPago, Presupuesto } from "@/types"
@@ -58,6 +58,8 @@ export default function FacturacionPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
   const [filtroEstado, setFiltroEstado] = useState<string>("todos")
+  const [linkPago, setLinkPago] = useState("")
+  const [linkCopiado, setLinkCopiado] = useState(false)
 
   const [form, setForm] = useState({
     cliente_id: "", fecha_vencimiento: "", descuento_porcentaje: "0",
@@ -201,7 +203,35 @@ export default function FacturacionPage() {
 
   const verDetalle = async (f: Factura) => {
     const { data } = await supabase.from("facturas").select("*, cliente:clientes(*), factura_lineas(*)").eq("id", f.id).single()
-    setDetalle(data as Factura); setVista("detalle")
+    setDetalle(data as Factura)
+    setLinkPago(data?.link_pago || "")
+    setLinkCopiado(false)
+    setVista("detalle")
+  }
+
+  const guardarLinkPago = async () => {
+    if (!detalle) return
+    const valor = linkPago.trim() || null
+    try {
+      const { error } = await supabase.from("facturas").update({ link_pago: valor }).eq("id", detalle.id)
+      if (error) throw error
+      setDetalle({ ...detalle, link_pago: valor || undefined })
+      setFacturas(facturas.map((x) => (x.id === detalle.id ? { ...x, link_pago: valor || undefined } : x)))
+    } catch (err) {
+      console.error(err)
+      setError("No se pudo guardar el enlace de pago.")
+    }
+  }
+
+  const copiarLinkPago = async () => {
+    if (!detalle?.link_pago) return
+    try {
+      await navigator.clipboard.writeText(detalle.link_pago)
+      setLinkCopiado(true)
+      setTimeout(() => setLinkCopiado(false), 2000)
+    } catch {
+      setError(`Enlace: ${detalle.link_pago}`)
+    }
   }
 
   // === STATS ===
@@ -295,15 +325,49 @@ export default function FacturacionPage() {
               </div>
             </div>
 
-            <div className="mt-8 pt-6 border-t border-white/5 flex flex-wrap gap-2 print:hidden">
-              {detalle.estado !== "pagada" && (
-                <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => cambiarEstado(detalle, "pagada")}><Check className="h-3.5 w-3.5 mr-1.5" /> Marcar pagada</Button>
+            <div className="mt-8 pt-6 border-t border-white/5 space-y-4 print:hidden">
+              <div className="flex flex-wrap gap-2">
+                {detalle.estado !== "pagada" && (
+                  <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => cambiarEstado(detalle, "pagada")}><Check className="h-3.5 w-3.5 mr-1.5" /> Marcar pagada</Button>
+                )}
+                {detalle.estado === "borrador" && (
+                  <Button variant="outline" size="sm" onClick={() => cambiarEstado(detalle, "emitida")}>Emitir</Button>
+                )}
+                <Button variant="outline" size="sm" onClick={() => editarFactura(detalle)}><FileText className="h-3.5 w-3.5 mr-1.5" /> Editar</Button>
+                <Button variant="ghost" size="sm" className="text-red-400" onClick={() => cambiarEstado(detalle, "anulada")} disabled={detalle.estado === "anulada"}>Anular</Button>
+              </div>
+
+              {(detalle.estado === "emitida" || detalle.estado === "vencida") && (
+                <div className="rounded-xl border border-accent/20 bg-accent/5 p-4">
+                  <p className="flex items-center gap-1.5 text-xs font-medium text-accent uppercase tracking-wider mb-2">
+                    <CreditCard className="h-3.5 w-3.5" /> Enlace de cobro (Stripe)
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Input
+                      value={linkPago}
+                      onChange={(e) => setLinkPago(e.target.value)}
+                      placeholder="https://buy.stripe.com/..."
+                      className="flex-1"
+                    />
+                    <Button variant="outline" size="sm" className="shrink-0" onClick={guardarLinkPago}>
+                      {detalle.link_pago === (linkPago.trim() || null) ? "Guardado" : "Guardar enlace"}
+                    </Button>
+                    {detalle.link_pago && (
+                      <>
+                        <Button variant="outline" size="sm" className="shrink-0" onClick={copiarLinkPago}>
+                          <Link2 className="h-3.5 w-3.5 mr-1.5" /> {linkCopiado ? "¡Copiado!" : "Copiar"}
+                        </Button>
+                        <a href={detalle.link_pago} target="_blank" rel="noopener noreferrer" className="shrink-0">
+                          <Button size="sm">Abrir</Button>
+                        </a>
+                      </>
+                    )}
+                  </div>
+                  <p className="text-[0.65rem] text-muted-foreground mt-2">
+                    Pega aquí el Payment Link generado en Stripe. Compártelo con el cliente para cobrar con tarjeta.
+                  </p>
+                </div>
               )}
-              {detalle.estado === "borrador" && (
-                <Button variant="outline" size="sm" onClick={() => cambiarEstado(detalle, "emitida")}>Emitir</Button>
-              )}
-              <Button variant="outline" size="sm" onClick={() => editarFactura(detalle)}><FileText className="h-3.5 w-3.5 mr-1.5" /> Editar</Button>
-              <Button variant="ghost" size="sm" className="text-red-400" onClick={() => cambiarEstado(detalle, "anulada")} disabled={detalle.estado === "anulada"}>Anular</Button>
             </div>
           </CardContent>
         </Card>

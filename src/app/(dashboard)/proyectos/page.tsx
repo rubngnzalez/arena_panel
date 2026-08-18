@@ -149,8 +149,11 @@ export default function ProyectosPage() {
 
   // ===== Checklist =====
   const guardarChecklist = async (proyecto: Proyecto, checklist: ChecklistItem[]) => {
-    setProyectos(proyectos.map((p) => (p.id === proyecto.id ? { ...p, checklist } : p)))
-    const { error } = await supabase.from("proyectos").update({ checklist }).eq("id", proyecto.id)
+    const total = checklist.length
+    const hechos = checklist.filter((i) => i.done).length
+    const progreso = total === 0 ? 0 : Math.round((hechos / total) * 100)
+    setProyectos(proyectos.map((p) => (p.id === proyecto.id ? { ...p, checklist, progreso } : p)))
+    const { error } = await supabase.from("proyectos").update({ checklist, progreso }).eq("id", proyecto.id)
     if (error) console.error("Error guardando checklist:", error)
   }
 

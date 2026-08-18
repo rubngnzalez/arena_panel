@@ -15,6 +15,7 @@ import {
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { formatDate } from "@/lib/utils"
+import { obtenerRol, type Rol } from "@/lib/roles"
 
 interface Document {
   id: string
@@ -34,8 +35,14 @@ export default function DocumentosPage() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [tipoFilter, setTipoFilter] = useState("todos")
+  const [rol, setRol] = useState<Rol>("admin")
 
   useEffect(() => {
+    const cargarRol = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.user) setRol(await obtenerRol(supabase as any, session.user.id))
+    }
+    cargarRol()
     fetchDocuments()
   }, [supabase])
 
@@ -97,15 +104,17 @@ export default function DocumentosPage() {
             {documents.length} archivos
           </p>
         </div>
-        <Button>
-          <Upload className="h-4 w-4 mr-2" />
-          Subir Archivo
-        </Button>
+        {rol !== "cliente" && (
+          <Button>
+            <Upload className="h-4 w-4 mr-2" />
+            Subir Archivo
+          </Button>
+        )}
       </div>
 
       {/* Filtros */}
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+        <div className="relative flex-1 w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Buscar documentos..."
@@ -114,7 +123,7 @@ export default function DocumentosPage() {
             className="pl-10"
           />
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {tipos.map(tipo => (
             <Button
               key={tipo}
@@ -167,18 +176,26 @@ export default function DocumentosPage() {
                 <span className="text-xs text-muted-foreground">
                   {formatDate(doc.fecha_subida)}
                 </span>
-                <Badge variant={doc.visible_cliente ? "primary" : "outline"} className="text-xs">
-                  {doc.visible_cliente ? "Visible" : "Oculto"}
-                </Badge>
+                {rol !== "cliente" && (
+                  <Badge variant={doc.visible_cliente ? "primary" : "outline"} className="text-xs">
+                    {doc.visible_cliente ? "Visible" : "Oculto"}
+                  </Badge>
+                )}
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="flex-1">
-                  <Download className="h-3 w-3 mr-1" />
-                  Descargar
-                </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <Trash2 className="h-3 w-3" />
-                </Button>
+                {doc.archivo_url && (
+                  <a href={doc.archivo_url} target="_blank" rel="noopener noreferrer" className="flex-1">
+                    <Button variant="outline" size="sm" className="w-full">
+                      <Download className="h-3 w-3 mr-1" />
+                      Descargar
+                    </Button>
+                  </a>
+                )}
+                {rol !== "cliente" && (
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                )}
               </div>
             </Card>
           ))}

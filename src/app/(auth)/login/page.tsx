@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { getBrowserClient } from "@/lib/supabase/client"
+import { obtenerRol } from "@/lib/roles"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -59,7 +60,8 @@ export default function LoginPage() {
         })
       } catch {}
 
-      router.push("/dashboard")
+      const rol = await obtenerRol(supabase as any, data.user.id)
+      router.push(rol === "cliente" ? "/asistentes" : "/dashboard")
       router.refresh()
     } catch {
       setError("Ocurrió un error inesperado. Inténtalo de nuevo.")

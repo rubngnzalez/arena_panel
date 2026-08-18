@@ -65,7 +65,7 @@ function PresupuestoPublicoContent() {
       if (error) throw error
       const r = res as { ok: boolean; error?: string }
       if (!r.ok) throw new Error(r.error || "error")
-      setResultado({ aceptado })
+      setResultado({ aceptado: aceptar })
       await cargar()
     } catch {
       setErrorAccion("No se pudo registrar tu respuesta. Inténtalo de nuevo o contacta con Arena13.")

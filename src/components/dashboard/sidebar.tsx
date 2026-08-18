@@ -5,19 +5,17 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { isFeatureEnabled } from "@/lib/features"
 import { cn } from "@/lib/utils"
-import { Badge } from "@/components/ui/badge"
 import { getPanelConfig, type PanelConfig } from "@/lib/panel-config"
+import type { Rol } from "@/lib/roles"
 import {
-  Home, Users, Briefcase, FolderKanban, LifeBuoy, FileText,
-  Bell, Settings, X, Grid3x3, LogOut, Layers,
-  Calculator, Receipt, BarChart3, Mail, Megaphone, ScrollText,
+  Home, Users, Briefcase, FolderKanban, Settings, X, LogOut, Layers,
+  Calculator, Receipt, Bot, Inbox, Phone, GaugeCircle, FileText,
 } from "lucide-react"
 
 interface NavItem {
   name: string
   href: string
   icon: React.ElementType
-  badge?: number
   feature?: string
 }
 
@@ -31,19 +29,20 @@ interface SidebarProps {
     email?: string
     name?: string
   }
-  unreadNotifications?: number
+  rol?: Rol
   onCloseMobile?: () => void
   onLogout?: () => void
   isMobile?: boolean
 }
 
-const navSections: NavSection[] = [
+const adminSections: NavSection[] = [
   {
     title: "Principal",
     items: [
       { name: "Dashboard", href: "/dashboard", icon: Home },
-      { name: "Clientes", href: "/clientes", icon: Users },
+      { name: "Inbox", href: "/inbox", icon: Inbox },
       { name: "Pipeline", href: "/pipeline", icon: Layers },
+      { name: "Clientes", href: "/clientes", icon: Users },
       { name: "Servicios", href: "/servicios", icon: Briefcase },
       { name: "Proyectos", href: "/proyectos", icon: FolderKanban },
     ],
@@ -53,25 +52,29 @@ const navSections: NavSection[] = [
     items: [
       { name: "Presupuestos", href: "/presupuestos", icon: Calculator, feature: "calculadora_presupuestos" },
       { name: "Facturación", href: "/facturacion", icon: Receipt, feature: "facturacion" },
-      { name: "Tickets", href: "/tickets", icon: LifeBuoy, feature: "tickets_soporte" },
-      { name: "Documentos", href: "/documentos", icon: FileText, feature: "documentos" },
-      { name: "Notificaciones", href: "/notificaciones", icon: Bell, feature: "notificaciones" },
-      { name: "Banners", href: "/banners", icon: Megaphone, feature: "banners" },
     ],
   },
   {
     title: "Sistema",
     items: [
-      { name: "Reportes", href: "/reportes", icon: BarChart3, feature: "reportes" },
-      { name: "Auditoría", href: "/auditoria", icon: ScrollText, feature: "auditoria" },
-      { name: "Newsletter", href: "/newsletter", icon: Mail, feature: "newsletter" },
-      { name: "Funcionalidades", href: "/features", icon: Grid3x3 },
+      { name: "Monitor IA", href: "/monitor-ia", icon: Bot },
       { name: "Configuración", href: "/settings", icon: Settings },
     ],
   },
 ]
 
-export function Sidebar({ user, unreadNotifications = 0, onCloseMobile, onLogout, isMobile = false }: SidebarProps) {
+const clienteSections: NavSection[] = [
+  {
+    title: "Mi espacio",
+    items: [
+      { name: "Mis Asistentes", href: "/asistentes", icon: Phone },
+      { name: "Mi Consumo", href: "/consumo", icon: GaugeCircle },
+      { name: "Mis Documentos", href: "/documentos", icon: FileText },
+    ],
+  },
+]
+
+export function Sidebar({ user, rol = "admin", onCloseMobile, onLogout, isMobile = false }: SidebarProps) {
   const pathname = usePathname()
   const [panelConfig, setPanelConfig] = useState<PanelConfig>({})
 
@@ -83,21 +86,16 @@ export function Sidebar({ user, unreadNotifications = 0, onCloseMobile, onLogout
   }, [])
 
   const panelNombre = panelConfig.nombrePanel || "Arena13"
+  const baseSections = rol === "cliente" ? clienteSections : adminSections
 
-  const filteredSections = navSections.map(section => ({
+  const filteredSections = baseSections.map(section => ({
     ...section,
     items: section.items.filter(item =>
       !item.feature || isFeatureEnabled(item.feature)
     ),
   })).filter(section => section.items.length > 0)
 
-  const sectionsWithBadges = filteredSections.map(section => ({
-    ...section,
-    items: section.items.map(item => ({
-      ...item,
-      badge: item.name === "Notificaciones" ? unreadNotifications : item.badge,
-    })),
-  }))
+  const homeHref = rol === "cliente" ? "/asistentes" : "/dashboard"
 
   const sidebarContent = (
     <>
@@ -106,7 +104,7 @@ export function Sidebar({ user, unreadNotifications = 0, onCloseMobile, onLogout
         "p-6",
         isMobile ? "flex items-center justify-between" : "flex justify-center"
       )}>
-        <Link href="/dashboard" className="group relative flex items-center justify-center" aria-label={panelNombre}>
+        <Link href={homeHref} className="group relative flex items-center justify-center" aria-label={panelNombre}>
           {/* Halo neón detrás del logo */}
           <span
             aria-hidden
@@ -136,7 +134,7 @@ export function Sidebar({ user, unreadNotifications = 0, onCloseMobile, onLogout
 
       {/* Navigation */}
       <nav className="flex-1 px-3 overflow-y-auto">
-        {sectionsWithBadges.map((section) => (
+        {filteredSections.map((section) => (
           <div key={section.title} className="mb-6">
             <h3 className="px-4 mb-2 text-[0.6rem] font-medium text-muted-foreground/50 uppercase tracking-widest2">
               {section.title}
@@ -168,14 +166,6 @@ export function Sidebar({ user, unreadNotifications = 0, onCloseMobile, onLogout
                       !isActive && "group-hover:text-primary"
                     )} />
                     <span className="relative flex-1 font-medium">{item.name}</span>
-                    {item.badge && item.badge > 0 && (
-                      <Badge
-                        variant={isActive ? "secondary" : "primary"}
-                        className="relative text-xs h-5 px-1.5"
-                      >
-                        {item.badge > 99 ? "99+" : item.badge}
-                      </Badge>
-                    )}
                     {/* Barra indicadora lateral */}
                     {!isActive && (
                       <span className="absolute left-0 top-1/2 h-0 w-0.5 -translate-y-1/2 rounded-pill bg-arena-gradient opacity-0 transition-all duration-200 group-hover:h-1/2 group-hover:opacity-100" />
