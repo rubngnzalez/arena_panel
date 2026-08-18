@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { useSupabase } from "@/lib/supabase/client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -16,6 +17,7 @@ import {
 import { formatCurrency } from "@/lib/utils"
 
 export default function DashboardPage() {
+  const router = useRouter()
   const supabase = useSupabase()
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState({
@@ -138,11 +140,11 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => router.push("/auditoria")}>
             <Activity className="h-4 w-4 mr-2" />
             Actividad
           </Button>
-          <Button size="sm">
+          <Button size="sm" onClick={() => router.push("/clientes?nuevo=1")}>
             <Plus className="h-4 w-4 mr-2" />
             Nuevo Cliente
           </Button>
@@ -182,7 +184,7 @@ export default function DashboardPage() {
                 Últimos proyectos actualizados
               </CardDescription>
             </div>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => router.push("/proyectos")}>
               Ver todos
               <ArrowUpRight className="h-4 w-4 ml-1" />
             </Button>
@@ -193,7 +195,7 @@ export default function DashboardPage() {
             <div className="text-center py-10 text-muted-foreground">
               <FolderKanban className="h-12 w-12 mx-auto mb-4 opacity-40" />
               <p className="text-sm font-light">No hay proyectos en curso</p>
-              <Button variant="outline" size="sm" className="mt-4">
+              <Button variant="outline" size="sm" className="mt-4" onClick={() => router.push("/proyectos?nuevo=1")}>
                 Crear primer proyecto
               </Button>
             </div>
@@ -245,12 +247,17 @@ export default function DashboardPage() {
         <CardContent>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { icon: Users, label: "Nuevo Cliente" },
-              { icon: Briefcase, label: "Nuevo Servicio" },
-              { icon: FolderKanban, label: "Nuevo Proyecto" },
-              { icon: Activity, label: "Ver Actividad" },
+              { icon: Users, label: "Nuevo Cliente", href: "/clientes?nuevo=1" },
+              { icon: Briefcase, label: "Nuevo Servicio", href: "/servicios" },
+              { icon: FolderKanban, label: "Nuevo Proyecto", href: "/proyectos?nuevo=1" },
+              { icon: Activity, label: "Ver Actividad", href: "/auditoria" },
             ].map((a) => (
-              <Button key={a.label} variant="secondary" className="h-auto flex-col gap-2 py-5">
+              <Button
+                key={a.label}
+                variant="secondary"
+                className="h-auto flex-col gap-2 py-5"
+                onClick={() => router.push(a.href)}
+              >
                 <a.icon className="h-5 w-5 text-primary" />
                 <span className="text-xs">{a.label}</span>
               </Button>

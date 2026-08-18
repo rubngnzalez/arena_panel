@@ -6,6 +6,13 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog"
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select"
 import {
   FolderKanban,
   Plus,
@@ -20,7 +27,7 @@ import {
   ChevronDown,
 } from "lucide-react"
 import { formatDate, cn } from "@/lib/utils"
-import type { Proyecto, ImputacionHoras, ChecklistItem } from "@/types"
+import type { Proyecto, ImputacionHoras, ChecklistItem, Cliente } from "@/types"
 
 const ESTADOS: Record<string, string> = {
   planeacion: "Planificación",
@@ -71,6 +78,13 @@ export default function ProyectosPage() {
   const [nuevaTarea, setNuevaTarea] = useState("")
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
+  // Diálogo de creación
+  const [crearOpen, setCrearOpen] = useState(false)
+  const [crearSaving, setCrearSaving] = useState(false)
+  const [crearError, setCrearError] = useState("")
+  const [clientesLista, setClientesLista] = useState<Cliente[]>([])
+  const [crearForm, setCrearForm] = useState({ cliente_id: "", nombre: "", descripcion: "", prioridad: "media" })
+
   // Recuperar timer activo de localStorage
   useEffect(() => {
     try {
@@ -113,6 +127,47 @@ export default function ProyectosPage() {
   }, [supabase])
 
   useEffect(() => { fetchProyectos() }, [fetchProyectos])
+
+  // Cargar lista de clientes y auto-abrir creación con ?nuevo=1
+  useEffect(() => {
+    supabase
+      .from("clientes")
+      .select("id,nombre,empresa")
+      .order("nombre")
+      .then(({ data }) => setClientesLista((data as Cliente[]) || []))
+    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("nuevo") === "1") {
+      setCrearOpen(true)
+      window.history.replaceState({}, "", window.location.pathname)
+    }
+  }, [supabase])
+
+  const crearProyecto = async () => {
+    if (!crearForm.cliente_id || !crearForm.nombre.trim()) {
+      setCrearError("Selecciona un cliente y ponle nombre al proyecto.")
+      return
+    }
+    setCrearSaving(true)
+    setCrearError("")
+    try {
+      const { error } = await supabase.from("proyectos").insert({
+        cliente_id: crearForm.cliente_id,
+        nombre: crearForm.nombre.trim(),
+        descripcion: crearForm.descripcion.trim() || null,
+        estado: "planeacion",
+        prioridad: crearForm.prioridad,
+        progreso: 0,
+      })
+      if (error) throw error
+      setCrearOpen(false)
+      setCrearForm({ cliente_id: "", nombre: "", descripcion: "", prioridad: "media" })
+      await fetchProyectos()
+    } catch (err) {
+      console.error("Error creando proyecto:", err)
+      setCrearError("No se pudo crear el proyecto.")
+    } finally {
+      setCrearSaving(false)
+    }
+  }
 
   const horasPorProyecto = imputaciones.reduce((acc, i) => {
     const min = i.duracion_minutos ?? (i.fin ? Math.round((new Date(i.fin).getTime() - new Date(i.inicio).getTime()) / 60000) : 0)
@@ -193,11 +248,79 @@ export default function ProyectosPage() {
             Gestiona los proyectos de tus clientes
           </p>
         </div>
-        <Button>
+        <Button onClick={() => setCrearOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Nuevo Proyecto
         </Button>
       </div>
+
+      {/* Diálogo: nuevo proyecto */}
+      <Dialog open={crearOpen} onOpenChange={(open) => { setCrearOpen(open); if (!open) setCrearError("") }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Nuevo Proyecto</DialogTitle>
+            <DialogDescription>Crea un proyecto para un cliente</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {crearError && (
+              <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400">
+                {crearError}
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label>Cliente *</Label>
+              <Select value={crearForm.cliente_id} onValueChange={(v) => setCrearForm({ ...crearForm, cliente_id: v })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona un cliente" />
+                </SelectTrigger>
+                <SelectContent>
+                  {clientesLista.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.empresa || c.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Nombre del proyecto *</Label>
+              <Input
+                value={crearForm.nombre}
+                onChange={(e) => setCrearForm({ ...crearForm, nombre: e.target.value })}
+                placeholder="Ej. Rediseño web corporativa"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Descripción</Label>
+              <Input
+                value={crearForm.descripcion}
+                onChange={(e) => setCrearForm({ ...crearForm, descripcion: e.target.value })}
+                placeholder="Breve contexto del proyecto"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Prioridad</Label>
+              <Select value={crearForm.prioridad} onValueChange={(v) => setCrearForm({ ...crearForm, prioridad: v })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="baja">Baja</SelectItem>
+                  <SelectItem value="media">Media</SelectItem>
+                  <SelectItem value="alta">Alta</SelectItem>
+                  <SelectItem value="urgente">Urgente</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setCrearOpen(false)}>Cancelar</Button>
+              <Button onClick={crearProyecto} disabled={crearSaving}>
+                {crearSaving ? "Creando..." : "Crear Proyecto"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

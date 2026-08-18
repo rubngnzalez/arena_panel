@@ -68,6 +68,11 @@ export default function ClientesPage() {
 
   useEffect(() => {
     fetchClientes()
+    // Auto-abrir el diálogo de creación al llegar con ?nuevo=1 (desde el dashboard)
+    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("nuevo") === "1") {
+      setDialogOpen(true)
+      window.history.replaceState({}, "", window.location.pathname)
+    }
   }, [supabase])
 
   useEffect(() => {

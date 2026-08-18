@@ -14,8 +14,16 @@ import {
   Filter,
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
-import { formatDate } from "@/lib/utils"
+import { Label } from "@/components/ui/label"
+import { formatDate, cn } from "@/lib/utils"
 import { obtenerRol, type Rol } from "@/lib/roles"
+import {
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog"
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select"
+import type { Cliente } from "@/types"
 
 interface Document {
   id: string
@@ -37,6 +45,14 @@ export default function DocumentosPage() {
   const [tipoFilter, setTipoFilter] = useState("todos")
   const [rol, setRol] = useState<Rol>("admin")
 
+  // Subida de documentos
+  const [subirOpen, setSubirOpen] = useState(false)
+  const [subiendo, setSubiendo] = useState(false)
+  const [subirError, setSubirError] = useState("")
+  const [archivo, setArchivo] = useState<File | null>(null)
+  const [subirForm, setSubirForm] = useState({ nombre: "", descripcion: "", tipo: "documento", cliente_id: "", visible_cliente: true })
+  const [clientesLista, setClientesLista] = useState<Cliente[]>([])
+
   useEffect(() => {
     const cargarRol = async () => {
       const { data: { session } } = await supabase.auth.getSession()
@@ -44,7 +60,72 @@ export default function DocumentosPage() {
     }
     cargarRol()
     fetchDocuments()
+    supabase
+      .from("clientes")
+      .select("id,nombre,empresa")
+      .order("nombre")
+      .then(({ data }) => setClientesLista((data as Cliente[]) || []))
   }, [supabase])
+
+  const elegirArchivo = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0]
+    if (!f) return
+    setArchivo(f)
+    if (!subirForm.nombre) {
+      setSubirForm((prev) => ({ ...prev, nombre: f.name.replace(/\.[^.]+$/, "") }))
+    }
+  }
+
+  const subirDocumento = async () => {
+    if (!archivo) {
+      setSubirError("Selecciona un archivo.")
+      return
+    }
+    setSubiendo(true)
+    setSubirError("")
+    try {
+      const ext = archivo.name.split(".").pop()
+      const path = `documentos/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`
+      const { error: upErr } = await supabase.storage
+        .from("cliente-docs")
+        .upload(path, archivo, { upsert: false })
+      if (upErr) throw upErr
+      const { data } = supabase.storage.from("cliente-docs").getPublicUrl(path)
+
+      const { error: insErr } = await supabase.from("documentos").insert({
+        nombre: subirForm.nombre.trim() || archivo.name,
+        descripcion: subirForm.descripcion.trim() || null,
+        tipo: subirForm.tipo,
+        archivo_url: data.publicUrl,
+        archivo_tamano: archivo.size,
+        cliente_id: subirForm.cliente_id || null,
+        visible_cliente: subirForm.visible_cliente,
+      })
+      if (insErr) throw insErr
+
+      setSubirOpen(false)
+      setArchivo(null)
+      setSubirForm({ nombre: "", descripcion: "", tipo: "documento", cliente_id: "", visible_cliente: true })
+      fetchDocuments()
+    } catch (err: any) {
+      console.error("Error subiendo documento:", err)
+      setSubirError(err?.message || "No se pudo subir el documento.")
+    } finally {
+      setSubiendo(false)
+    }
+  }
+
+  const eliminarDocumento = async (doc: Document) => {
+    if (!confirm(`¿Eliminar «${doc.nombre}»?`)) return
+    try {
+      const { error } = await supabase.from("documentos").delete().eq("id", doc.id)
+      if (error) throw error
+      setDocuments(documents.filter((d) => d.id !== doc.id))
+    } catch (err) {
+      console.error("Error eliminando documento:", err)
+      alert("No se pudo eliminar el documento.")
+    }
+  }
 
   const fetchDocuments = async () => {
     try {
@@ -105,12 +186,101 @@ export default function DocumentosPage() {
           </p>
         </div>
         {rol !== "cliente" && (
-          <Button>
+          <Button onClick={() => setSubirOpen(true)}>
             <Upload className="h-4 w-4 mr-2" />
             Subir Archivo
           </Button>
         )}
       </div>
+
+      {/* Diálogo: subir documento */}
+      <Dialog open={subirOpen} onOpenChange={(open) => { setSubirOpen(open); if (!open) setSubirError("") }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Subir Archivo</DialogTitle>
+            <DialogDescription>Sube un documento a la biblioteca</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {subirError && (
+              <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400">
+                {subirError}
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label>Archivo *</Label>
+              <input
+                type="file"
+                onChange={elegirArchivo}
+                className="w-full text-sm text-muted-foreground file:mr-3 file:rounded-pill file:border-0 file:bg-white/10 file:px-4 file:py-2 file:text-sm file:text-foreground hover:file:bg-white/20 cursor-pointer"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Nombre</Label>
+              <Input
+                value={subirForm.nombre}
+                onChange={(e) => setSubirForm({ ...subirForm, nombre: e.target.value })}
+                placeholder="Nombre visible del documento"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Descripción</Label>
+              <Input
+                value={subirForm.descripcion}
+                onChange={(e) => setSubirForm({ ...subirForm, descripcion: e.target.value })}
+                placeholder="Opcional"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Tipo</Label>
+                <Select value={subirForm.tipo} onValueChange={(v) => setSubirForm({ ...subirForm, tipo: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="diseño">Diseño</SelectItem>
+                    <SelectItem value="documento">Documento</SelectItem>
+                    <SelectItem value="imagen">Imagen</SelectItem>
+                    <SelectItem value="video">Video</SelectItem>
+                    <SelectItem value="otro">Otro</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Cliente</Label>
+                <Select value={subirForm.cliente_id || "ninguno"} onValueChange={(v) => setSubirForm({ ...subirForm, cliente_id: v === "ninguno" ? "" : v })}>
+                  <SelectTrigger><SelectValue placeholder="Sin asignar" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ninguno">Sin asignar</SelectItem>
+                    {clientesLista.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>{c.empresa || c.nombre}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSubirForm({ ...subirForm, visible_cliente: !subirForm.visible_cliente })}
+              className={cn(
+                "w-full flex items-center justify-between rounded-xl border px-4 py-3 text-sm text-left transition-colors",
+                subirForm.visible_cliente
+                  ? "border-primary/40 bg-primary/10"
+                  : "border-white/10 bg-white/[0.02] text-muted-foreground"
+              )}
+            >
+              <span>Visible para el cliente</span>
+              <span className={cn("relative h-5 w-9 rounded-pill transition-colors shrink-0 ml-3", subirForm.visible_cliente ? "bg-arena-gradient" : "bg-white/10")}>
+                <span className={cn("absolute top-0.5 h-4 w-4 rounded-full bg-white transition-all", subirForm.visible_cliente ? "left-[1.15rem]" : "left-0.5")} />
+              </span>
+            </button>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setSubirOpen(false)}>Cancelar</Button>
+              <Button onClick={subirDocumento} disabled={subiendo || !archivo}>
+                {subiendo ? "Subiendo..." : "Subir"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Filtros */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
@@ -192,7 +362,13 @@ export default function DocumentosPage() {
                   </a>
                 )}
                 {rol !== "cliente" && (
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    title="Eliminar documento"
+                    onClick={() => eliminarDocumento(doc)}
+                  >
                     <Trash2 className="h-3 w-3" />
                   </Button>
                 )}

@@ -2,13 +2,13 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
 import { AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { getBrowserClient } from "@/lib/supabase/client"
 import { obtenerRol } from "@/lib/roles"
+import { BrandLogo } from "@/components/brand-logo"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -75,8 +75,12 @@ export default function LoginPage() {
       <div className="w-full max-w-sm space-y-10 animate-fade-in">
         {/* Logo */}
         <div className="text-center">
-          <div className="inline-flex items-center justify-center h-16 w-16 rounded-pill bg-arena-gradient shadow-glow-purple mb-5">
-            <span className="text-2xl font-semibold text-white">A</span>
+          <div className="inline-flex items-center justify-center mb-4">
+            <BrandLogo
+              className="drop-shadow-[0_0_14px_rgba(120,125,255,0.35)]"
+              imgClassName="h-16"
+              fallbackSize="text-4xl"
+            />
           </div>
           <h1 className="text-3xl font-medium tracking-tight mb-1.5">
             Arena<span className="text-gradient">13</span>
@@ -133,12 +137,12 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <Link
-          href="/"
+        <a
+          href="https://arenatrece.com"
           className="block text-center text-xs text-muted-foreground hover:text-primary transition-colors uppercase tracking-wider"
         >
           ← arenatrece.com
-        </Link>
+        </a>
       </div>
     </div>
   )
