@@ -37,11 +37,9 @@ export default function SettingsPage() {
 
   // Appearance
   const [currentThemeId, setCurrentThemeId] = useState(getStoredThemeId())
-  const [panelCfg, setPanelCfg] = useState({ titulo: "", nombrePanel: "", logoUrl: "", faviconUrl: "" })
-  const [uploadingLogo, setUploadingLogo] = useState(false)
+  const [panelCfg, setPanelCfg] = useState({ titulo: "", nombrePanel: "", faviconUrl: "" })
   const [uploadingFavicon, setUploadingFavicon] = useState(false)
   const [cfgSaved, setCfgSaved] = useState(false)
-  const logoRef = useRef<HTMLInputElement>(null)
   const faviconRef = useRef<HTMLInputElement>(null)
 
   // Métodos de contacto
@@ -60,7 +58,6 @@ export default function SettingsPage() {
     setPanelCfg({
       titulo: pc.titulo || "",
       nombrePanel: pc.nombrePanel || "",
-      logoUrl: pc.logoUrl || "",
       faviconUrl: pc.faviconUrl || "",
     })
   }, [])
@@ -130,25 +127,6 @@ export default function SettingsPage() {
     applyThemeId(themeId)
   }
 
-  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setUploadingLogo(true)
-    try {
-      const path = `panel/logo_${Date.now()}.${file.name.split(".").pop()}`
-      const { error } = await supabase.storage.from("cliente-docs").upload(path, file, { upsert: true })
-      if (error) throw error
-      const { data } = supabase.storage.from("cliente-docs").getPublicUrl(path)
-      setPanelCfg({ ...panelCfg, logoUrl: data.publicUrl })
-    } catch (err) {
-      console.error("Error:", err)
-      alert("No se pudo subir el logo.")
-    } finally {
-      setUploadingLogo(false)
-      if (logoRef.current) logoRef.current.value = ""
-    }
-  }
-
   const handleFaviconUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -172,7 +150,6 @@ export default function SettingsPage() {
     const config = {
       titulo: panelCfg.titulo.trim() || undefined,
       nombrePanel: panelCfg.nombrePanel.trim() || undefined,
-      logoUrl: panelCfg.logoUrl || undefined,
       faviconUrl: panelCfg.faviconUrl || undefined,
     }
     savePanelConfig(config)
@@ -262,50 +239,25 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* Logo y favicon */}
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Logo del panel</Label>
-              <div className="flex items-center gap-3">
-                <input ref={logoRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
-                {panelCfg.logoUrl ? (
-                  <img src={panelCfg.logoUrl} alt="Logo" className="h-12 w-12 rounded-lg object-cover border border-white/10" />
-                ) : (
-                  <div className="h-12 w-12 rounded-lg bg-arena-gradient flex items-center justify-center">
-                    <span className="text-sm font-semibold text-white">A</span>
-                  </div>
-                )}
-                <Button variant="outline" size="sm" onClick={() => logoRef.current?.click()} disabled={uploadingLogo}>
-                  {uploadingLogo ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
-                  {uploadingLogo ? "Subiendo..." : "Subir logo"}
+          {/* Favicon (el logo del panel vive en public/branding/ y cambia solo según el tema) */}
+          <div className="space-y-2">
+            <Label>Favicon</Label>
+            <div className="flex items-center gap-3">
+              <input ref={faviconRef} type="file" accept="image/*,.ico" className="hidden" onChange={handleFaviconUpload} />
+              {panelCfg.faviconUrl ? (
+                <img src={panelCfg.faviconUrl} alt="Favicon" className="h-8 w-8 rounded border border-white/10" />
+              ) : (
+                <div className="h-8 w-8 rounded border border-white/10 flex items-center justify-center text-xs">16</div>
+              )}
+              <Button variant="outline" size="sm" onClick={() => faviconRef.current?.click()} disabled={uploadingFavicon}>
+                {uploadingFavicon ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
+                {uploadingFavicon ? "Subiendo..." : "Subir favicon"}
+              </Button>
+              {panelCfg.faviconUrl && (
+                <Button variant="ghost" size="sm" onClick={() => setPanelCfg({ ...panelCfg, faviconUrl: "" })}>
+                  Quitar
                 </Button>
-                {panelCfg.logoUrl && (
-                  <Button variant="ghost" size="sm" onClick={() => setPanelCfg({ ...panelCfg, logoUrl: "" })}>
-                    Quitar
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Favicon</Label>
-              <div className="flex items-center gap-3">
-                <input ref={faviconRef} type="file" accept="image/*,.ico" className="hidden" onChange={handleFaviconUpload} />
-                {panelCfg.faviconUrl ? (
-                  <img src={panelCfg.faviconUrl} alt="Favicon" className="h-8 w-8 rounded border border-white/10" />
-                ) : (
-                  <div className="h-8 w-8 rounded border border-white/10 flex items-center justify-center text-xs">16</div>
-                )}
-                <Button variant="outline" size="sm" onClick={() => faviconRef.current?.click()} disabled={uploadingFavicon}>
-                  {uploadingFavicon ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
-                  {uploadingFavicon ? "Subiendo..." : "Subir favicon"}
-                </Button>
-                {panelCfg.faviconUrl && (
-                  <Button variant="ghost" size="sm" onClick={() => setPanelCfg({ ...panelCfg, faviconUrl: "" })}>
-                    Quitar
-                  </Button>
-                )}
-              </div>
+              )}
             </div>
           </div>
 

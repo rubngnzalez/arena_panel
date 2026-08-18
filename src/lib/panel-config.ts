@@ -4,7 +4,6 @@
  */
 
 export interface PanelConfig {
-  logoUrl?: string
   titulo?: string
   nombrePanel?: string
   faviconUrl?: string
@@ -15,7 +14,13 @@ const STORAGE_KEY = "arena13-panel-config"
 export function getPanelConfig(): PanelConfig {
   if (typeof window === "undefined") return {}
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}")
+    const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}")
+    // Saneado: el logo ya no se configura aquí (vive en public/branding/)
+    if (raw && typeof raw === "object" && "logoUrl" in raw) {
+      delete raw.logoUrl
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(raw))
+    }
+    return raw
   } catch {
     return {}
   }

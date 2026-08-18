@@ -119,19 +119,11 @@ export function Sidebar({ user, rol = "admin", onCloseMobile, onLogout, isMobile
             aria-hidden
             className="absolute h-12 w-12 rounded-full bg-arena-gradient blur-2xl opacity-90 animate-arena-neon-halo"
           />
-          {panelConfig.logoUrl ? (
-            <img
-              src={panelConfig.logoUrl}
-              alt={panelNombre}
-              className="relative h-32 w-32 object-contain animate-arena-float drop-shadow-[0_0_8px_rgba(120,125,255,0.3)]"
-            />
-          ) : (
-            <BrandLogo
-              className="relative animate-arena-float"
-              imgClassName="h-32 w-32 drop-shadow-[0_0_8px_rgba(120,125,255,0.3)]"
-              fallbackSize="text-8xl drop-shadow-[0_0_10px_rgba(120,125,255,0.55)]"
-            />
-          )}
+          <BrandLogo
+            className="relative animate-arena-float"
+            imgClassName="h-32 w-32 drop-shadow-[0_0_8px_rgba(120,125,255,0.3)]"
+            fallbackSize="text-8xl drop-shadow-[0_0_10px_rgba(120,125,255,0.55)]"
+          />
         </Link>
         {isMobile && onCloseMobile && (
           <button
