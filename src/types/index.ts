@@ -48,6 +48,12 @@ export interface Cliente {
   facebook?: string
   // Asistentes IA
   minutos_contratados?: number
+  // Integraciones IA
+  retell_agent_id?: string
+  ia_phone_number?: string
+  calendar_id?: string
+  make_webhook_url?: string
+  precio_minuto_extra?: number
 }
 
 // Documento/material del cliente (descargable)
@@ -380,7 +386,48 @@ export interface InteraccionIA {
   duracion_seg?: number
   transcripcion?: TurnoTranscripcion[]
   resumen?: string
+  valoracion?: number
+  valoracion_tags?: string[]
   metadata?: Record<string, any>
+  created_at: string
+}
+
+// ============================================
+// Citas (agendadas por asistentes IA o manual)
+// ============================================
+export type CitaEstado = 'pendiente' | 'confirmada' | 'completada' | 'cancelada' | 'no_show'
+export type CitaOrigen = 'ia' | 'manual' | 'webhook'
+
+export interface Cita {
+  id: string
+  cliente_id?: string
+  cliente?: Pick<Cliente, 'id' | 'nombre' | 'empresa'> | null
+  contacto_nombre?: string
+  contacto_email?: string
+  contacto_telefono?: string
+  titulo: string
+  fecha_hora: string
+  duracion_min?: number
+  estado: CitaEstado
+  origen: CitaOrigen
+  notas?: string
+  metadata?: Record<string, any>
+  created_at: string
+}
+
+// ============================================
+// Plantillas de presupuesto
+// ============================================
+export interface PlantillaPresupuesto {
+  id: string
+  nombre: string
+  descripcion?: string
+  plantilla: {
+    titulo?: string
+    descuento_porcentaje?: number
+    iva_porcentaje?: number
+    lineas: { descripcion: string; cantidad: number; precio_unitario: number }[]
+  }
   created_at: string
 }
 

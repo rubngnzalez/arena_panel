@@ -350,3 +350,85 @@
     animation: none;
   }
 }
+
+/* ============================================
+   PRINT / PDF — documentos limpios en blanco
+   ============================================ */
+@media print {
+  @page {
+    margin: 14mm;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+    color: #0a0a0a !important;
+    overflow: visible !important;
+  }
+
+  body::before {
+    display: none !important;
+  }
+
+  canvas,
+  aside,
+  header,
+  nav,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  main {
+    margin: 0 !important;
+    min-height: auto !important;
+  }
+
+  .arena-container {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+
+  /* Glass → papel: sin blur, sin sombras, sin transparencias */
+  .glass,
+  .glass-strong,
+  .arena-card {
+    background: #ffffff !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: 1px solid #e2e2e2 !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+
+  /* Texto negro y sin gradientes */
+  * {
+    color: #0a0a0a !important;
+    text-shadow: none !important;
+    box-shadow: none !important;
+  }
+
+  .text-gradient {
+    background: none !important;
+    -webkit-text-fill-color: #0a0a0a !important;
+    color: #0a0a0a !important;
+  }
+
+  /* Tablas y bordes interiores legibles */
+  table {
+    border-collapse: collapse !important;
+  }
+  th,
+  td {
+    border-color: #e2e2e2 !important;
+  }
+  thead tr {
+    background: #f4f4f4 !important;
+  }
+
+  /* Evita cortes feos entre páginas */
+  tr,
+  img,
+  .arena-card {
+    page-break-inside: avoid;
+  }
+}

@@ -9,7 +9,7 @@ import { getPanelConfig, type PanelConfig } from "@/lib/panel-config"
 import type { Rol } from "@/lib/roles"
 import {
   Home, Users, Briefcase, FolderKanban, Settings, X, LogOut, Layers,
-  Calculator, Receipt, Bot, Inbox, Phone, GaugeCircle, FileText,
+  Calculator, Receipt, Bot, Inbox, Phone, GaugeCircle, FileText, CalendarDays,
 } from "lucide-react"
 
 interface NavItem {
@@ -45,6 +45,7 @@ const adminSections: NavSection[] = [
       { name: "Clientes", href: "/clientes", icon: Users },
       { name: "Servicios", href: "/servicios", icon: Briefcase },
       { name: "Proyectos", href: "/proyectos", icon: FolderKanban },
+      { name: "Citas", href: "/citas", icon: CalendarDays },
     ],
   },
   {
@@ -69,6 +70,7 @@ const clienteSections: NavSection[] = [
     items: [
       { name: "Mis Asistentes", href: "/asistentes", icon: Phone },
       { name: "Mi Consumo", href: "/consumo", icon: GaugeCircle },
+      { name: "Mis Citas", href: "/citas", icon: CalendarDays },
       { name: "Mis Documentos", href: "/documentos", icon: FileText },
     ],
   },

@@ -13,10 +13,10 @@ import {
 } from "@/components/ui/select"
 import {
   ArrowLeft, Plus, Trash2, Calculator, FileText, Check, X, Printer,
-  Send, Copy, TrendingUp, Euro, Calendar, Link2,
+  Send, Copy, TrendingUp, Euro, Calendar, Link2, LayoutTemplate, BookmarkPlus,
 } from "lucide-react"
 import { formatCurrency, formatDate, getInitials } from "@/lib/utils"
-import type { Presupuesto, PresupuestoLinea, PresupuestoEstado } from "@/types"
+import type { Presupuesto, PresupuestoLinea, PresupuestoEstado, PlantillaPresupuesto } from "@/types"
 
 const ESTADOS: Record<PresupuestoEstado, { label: string; color: string }> = {
   borrador: { label: "Borrador", color: "bg-slate-500/20 text-slate-300" },
@@ -49,6 +49,9 @@ export default function PresupuestosPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
   const [copiado, setCopiado] = useState(false)
+  const [plantillas, setPlantillas] = useState<PlantillaPresupuesto[]>([])
+  const [plantillaNombre, setPlantillaNombre] = useState("")
+  const [plantillaMsg, setPlantillaMsg] = useState("")
 
   // Form state
   const [form, setForm] = useState({
@@ -66,12 +69,14 @@ export default function PresupuestosPage() {
 
   const cargar = useCallback(async () => {
     setLoading(true)
-    const [preRes, cliRes] = await Promise.all([
+    const [preRes, cliRes, plaRes] = await Promise.all([
       supabase.from("presupuestos").select("*, cliente:clientes(id,nombre,empresa,email), presupuesto_lineas(*)").order("created_at", { ascending: false }),
       supabase.from("clientes").select("id,nombre,empresa").order("nombre"),
+      supabase.from("presupuesto_plantillas").select("*").order("nombre"),
     ])
     if (preRes.data) setPresupuestos(preRes.data as Presupuesto[])
     if (cliRes.data) setClientes(cliRes.data)
+    if (plaRes.data) setPlantillas(plaRes.data as PlantillaPresupuesto[])
     setLoading(false)
   }, [supabase])
 
@@ -236,6 +241,71 @@ export default function PresupuestosPage() {
       await cargar()
     } catch (err) {
       console.error(err)
+    }
+  }
+
+  const aplicarPlantilla = (pla: PlantillaPresupuesto) => {
+    const p = pla.plantilla
+    setForm((f) => ({
+      ...f,
+      titulo: p.titulo || f.titulo,
+      descuento_porcentaje: String(p.descuento_porcentaje ?? 0),
+      iva_porcentaje: String(p.iva_porcentaje ?? 21),
+    }))
+    setLineas(
+      (p.lineas && p.lineas.length > 0
+        ? p.lineas
+        : [{ descripcion: "", cantidad: 1, precio_unitario: 0 }]
+      ).map((l) => ({
+        id: crypto.randomUUID(),
+        descripcion: l.descripcion || "",
+        cantidad: String(l.cantidad ?? 1),
+        precio_unitario: String(l.precio_unitario ?? 0),
+      }))
+    )
+  }
+
+  const guardarComoPlantilla = async () => {
+    const nombre = plantillaNombre.trim()
+    if (!nombre) {
+      setPlantillaMsg("Ponle un nombre a la plantilla.")
+      return
+    }
+    const lineasValidas = lineas.filter((l) => l.descripcion.trim() && Number(l.cantidad) > 0)
+    if (lineasValidas.length === 0) {
+      setPlantillaMsg("Añade al menos una línea para crear la plantilla.")
+      return
+    }
+    try {
+      const { error: e } = await supabase.from("presupuesto_plantillas").insert({
+        nombre,
+        plantilla: {
+          titulo: form.titulo.trim(),
+          descuento_porcentaje: Number(form.descuento_porcentaje) || 0,
+          iva_porcentaje: Number(form.iva_porcentaje) || 21,
+          lineas: lineasValidas.map((l) => ({
+            descripcion: l.descripcion.trim(),
+            cantidad: Number(l.cantidad),
+            precio_unitario: Number(l.precio_unitario),
+          })),
+        },
+      })
+      if (e) throw e
+      setPlantillaNombre("")
+      setPlantillaMsg("Plantilla guardada ✓")
+      setTimeout(() => setPlantillaMsg(""), 2500)
+      await cargar()
+    } catch {
+      setPlantillaMsg("No se pudo guardar la plantilla.")
+    }
+  }
+
+  const borrarPlantilla = async (pla: PlantillaPresupuesto) => {
+    try {
+      await supabase.from("presupuesto_plantillas").delete().eq("id", pla.id)
+      await cargar()
+    } catch {
+      /* silencioso */
     }
   }
 
@@ -409,6 +479,50 @@ export default function PresupuestosPage() {
           <CardContent className="p-6 space-y-6">
             {error && (
               <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400">{error}</div>
+            )}
+
+            {/* Plantillas */}
+            {(plantillas.length > 0 || plantillaMsg) && (
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
+                <p className="text-xs font-medium text-primary uppercase tracking-wider">Plantillas</p>
+                {plantillas.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {plantillas.map((pla) => (
+                      <div key={pla.id} className="flex items-center">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="rounded-r-none"
+                          onClick={() => aplicarPlantilla(pla)}
+                        >
+                          <LayoutTemplate className="h-3.5 w-3.5 mr-1.5" /> {pla.nombre}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="rounded-l-none border-l-0 px-2 text-destructive"
+                          title="Eliminar plantilla"
+                          onClick={() => borrarPlantilla(pla)}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                  <Input
+                    value={plantillaNombre}
+                    onChange={(e) => setPlantillaNombre(e.target.value)}
+                    placeholder="Guardar las líneas actuales como plantilla…"
+                    className="flex-1 h-9"
+                  />
+                  <Button variant="outline" size="sm" className="shrink-0" onClick={guardarComoPlantilla}>
+                    <BookmarkPlus className="h-3.5 w-3.5 mr-1.5" /> Guardar plantilla
+                  </Button>
+                </div>
+                {plantillaMsg && <p className="text-xs text-muted-foreground">{plantillaMsg}</p>}
+              </div>
             )}
 
             {/* Datos generales */}

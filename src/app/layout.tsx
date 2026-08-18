@@ -3,6 +3,7 @@ import { Inter } from "next/font/google"
 import "@/styles/globals.css"
 import { ANTI_FLASH_SCRIPT } from "@/lib/themes"
 import { NeuralBackground } from "@/components/neural-background"
+import { SpaRedirect } from "@/components/spa-redirect"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
 
@@ -34,6 +35,7 @@ export default function RootLayout({
         />
       </head>
       <body className={`${inter.variable} font-sans antialiased`}>
+        <SpaRedirect />
         <NeuralBackground />
         {children}
       </body>

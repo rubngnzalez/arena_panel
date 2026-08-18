@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Arena13 — Panel</title>
+  <script>
+    // SPA fallback para GitHub Pages (output: 'export'):
+    // un refresh en una ruta profunda sirve este 404; guardamos la ruta
+    // pedida y volvemos al index, donde la app la restaura vía router.
+    (function () {
+      try {
+        sessionStorage.setItem("arena-spa-redirect", window.location.pathname + window.location.search + window.location.hash);
+      } catch (e) {}
+      window.location.replace(window.location.origin + (
+        window.location.pathname.indexOf("/arena_panel") === 0 ? "/arena_panel/" : "/"
+      ));
+    })();
+  </script>
+</head>
+<body>
+  <noscript>
+    <p>Esta aplicación requiere JavaScript. <a href="/">Volver al inicio</a></p>
+  </noscript>
+</body>
+</html>

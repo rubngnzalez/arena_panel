@@ -88,9 +88,16 @@ export function AudioPlayer({ src, duracionSeg, className }: AudioPlayerProps) {
     let cancelled = false
     const cargarPeaks = async () => {
       try {
+        // HEAD para no descargar archivos enormes: con más de 2.5MB
+        // mantenemos los picos deterministas (la onda es orientativa).
+        const head = await fetch(src, { method: "HEAD" })
+        const size = Number(head.headers.get("content-length") || 0)
+        if (head.ok && size > 2_500_000) return
+
         const res = await fetch(src)
         if (!res.ok) return
         const buffer = await res.arrayBuffer()
+        if (cancelled) return
         const AC = window.AudioContext || (window as any).webkitAudioContext
         if (!AC) return
         const ctx = new AC()
@@ -98,15 +105,16 @@ export function AudioPlayer({ src, duracionSeg, className }: AudioPlayerProps) {
         if (cancelled) { ctx.close(); return }
         const channel = audioBuffer.getChannelData(0)
         const blockSize = Math.floor(channel.length / BARS) || 1
+        const step = Math.max(1, Math.floor(blockSize / 64))
         const peaks: number[] = []
         let max = 0.0001
         for (let i = 0; i < BARS; i++) {
           let sum = 0
           const start = i * blockSize
-          for (let j = 0; j < blockSize; j += 16) {
+          for (let j = 0; j < blockSize; j += step) {
             sum += Math.abs(channel[start + j] || 0)
           }
-          const v = sum / (blockSize / 16)
+          const v = sum / Math.max(1, Math.ceil(blockSize / step))
           peaks.push(v)
           if (v > max) max = v
         }

@@ -27,7 +27,7 @@ import {
   Image as ImageIcon, Palette, Globe, MapPin, Plus, X, FileDown,
   Hash, Type, Eye,
   Figma, Github, ListChecks, ExternalLink, Pencil, Link2, Vault,
-  PackageOpen, FileCheck2, Check, SquareCheck, ChevronDown,
+  PackageOpen, FileCheck2, Check, SquareCheck, ChevronDown, Bot,
 } from "lucide-react"
 import { formatDate, formatRelativeTime, formatCurrency, getInitials } from "@/lib/utils"
 import type {
@@ -152,6 +152,14 @@ function ClienteDetalleContent() {
     instagram: "", linkedin: "", facebook: "",
   })
 
+  // Integraciones IA
+  const [iaData, setIaData] = useState({
+    retell_agent_id: "", ia_phone_number: "", calendar_id: "",
+    make_webhook_url: "", minutos_contratados: "0", precio_minuto_extra: "0",
+  })
+  const [savingIA, setSavingIA] = useState(false)
+  const [savedIA, setSavedIA] = useState(false)
+
   const cargarTodo = useCallback(async () => {
     if (!id) { setError("ID de cliente no especificado"); setLoading(false); return }
     try {
@@ -189,6 +197,12 @@ function ClienteDetalleContent() {
         color_acento: c.color_acento || "", fuente_principal: c.fuente_principal || "",
         fuente_secundaria: c.fuente_secundaria || "", descripcion_marca: c.descripcion_marca || "",
         instagram: c.instagram || "", linkedin: c.linkedin || "", facebook: c.facebook || "",
+      })
+      setIaData({
+        retell_agent_id: c.retell_agent_id || "", ia_phone_number: c.ia_phone_number || "",
+        calendar_id: c.calendar_id || "", make_webhook_url: c.make_webhook_url || "",
+        minutos_contratados: String(c.minutos_contratados ?? 0),
+        precio_minuto_extra: String(c.precio_minuto_extra ?? 0),
       })
     } catch (err) {
       console.error("Error cargando cliente:", err)
@@ -259,6 +273,57 @@ function ClienteDetalleContent() {
       alert("No se pudo guardar la identidad visual.")
     } finally {
       setSavingBrand(false)
+    }
+  }
+
+  // === INTEGRACIONES IA ===
+
+  const handleSaveIA = async () => {
+    if (!id) return
+    setSavingIA(true)
+    setSavedIA(false)
+    try {
+      const payload = {
+        retell_agent_id: iaData.retell_agent_id.trim() || null,
+        ia_phone_number: iaData.ia_phone_number.trim() || null,
+        calendar_id: iaData.calendar_id.trim() || null,
+        make_webhook_url: iaData.make_webhook_url.trim() || null,
+        minutos_contratados: Number(iaData.minutos_contratados) || 0,
+        precio_minuto_extra: Number(iaData.precio_minuto_extra) || 0,
+      }
+      const { error } = await supabase.from("clientes").update(payload).eq("id", id)
+      if (error) throw error
+      setCliente({ ...cliente!, ...payload } as Cliente)
+      setSavedIA(true)
+      setTimeout(() => setSavedIA(false), 2500)
+    } catch (err) {
+      console.error("Error guardando integraciones:", err)
+      alert("No se pudieron guardar las integraciones.")
+    } finally {
+      setSavingIA(false)
+    }
+  }
+
+  // === FACTURAR OVERAGE ===
+
+  const facturarOverage = async () => {
+    if (!id) return
+    try {
+      const { data, error } = await supabase.rpc("facturar_overage", { p_cliente_id: id })
+      if (error) throw error
+      const r = data as { ok: boolean; error?: string; numero?: string; minutos_extra?: number }
+      if (!r.ok) {
+        alert(
+          r.error === "sin_overage" ? "Este cliente no tiene minutos extra este mes."
+          : r.error === "ya_facturado" ? "Ya existe una factura de overage para este mes."
+          : "No se pudo generar la factura de overage."
+        )
+        return
+      }
+      alert(`Factura ${r.numero} creada en borrador: ${r.minutos_extra} min extra.`)
+    } catch (err) {
+      console.error(err)
+      alert("No se pudo facturar el overage.")
     }
   }
 
@@ -761,6 +826,7 @@ function ClienteDetalleContent() {
       <Tabs defaultValue="identidad">
         <TabsList className="w-full justify-start overflow-x-auto flex-nowrap">
           <TabsTrigger value="identidad" className="shrink-0">Identidad visual</TabsTrigger>
+          <TabsTrigger value="integraciones" className="shrink-0">Integraciones IA</TabsTrigger>
           <TabsTrigger value="boveda" className="shrink-0">
             <Vault className="h-3.5 w-3.5 mr-1.5" /> Bóveda ({documentos.length + totalEndpointsCliente})
           </TabsTrigger>
@@ -855,6 +921,84 @@ function ClienteDetalleContent() {
                   </div>
                 </div>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ===== TAB: INTEGRACIONES IA ===== */}
+        <TabsContent value="integraciones" className="space-y-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+              <CardTitle className="flex items-center gap-2"><Bot className="h-5 w-5 text-accent" /> Integraciones IA</CardTitle>
+              <div className="flex items-center gap-2">
+                {savedIA && <span className="text-xs text-green-400">Guardado ✓</span>}
+                <Button variant="outline" size="sm" onClick={facturarOverage}>
+                  <CircleDollarSign className="h-3.5 w-3.5 mr-1.5" /> Facturar overage
+                </Button>
+                <Button size="sm" onClick={handleSaveIA} disabled={savingIA}>
+                  <Save className="h-3.5 w-3.5 mr-1.5" /> {savingIA ? "Guardando..." : "Guardar"}
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-xs text-muted-foreground">
+                Parámetros técnicos que enlazan este cliente con sus agentes externos. Se usan para asociar de forma automática leads, llamadas y citas.
+              </p>
+
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Retell Agent ID</Label>
+                  <Input
+                    value={iaData.retell_agent_id}
+                    onChange={(e) => setIaData({ ...iaData, retell_agent_id: e.target.value })}
+                    placeholder="agent_xxxxxxxx"
+                    className="font-mono text-sm"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Teléfono del asistente</Label>
+                  <Input
+                    value={iaData.ia_phone_number}
+                    onChange={(e) => setIaData({ ...iaData, ia_phone_number: e.target.value })}
+                    placeholder="+34 600 000 000"
+                    className="font-mono text-sm"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Google Calendar ID</Label>
+                  <Input
+                    value={iaData.calendar_id}
+                    onChange={(e) => setIaData({ ...iaData, calendar_id: e.target.value })}
+                    placeholder="cliente@group.calendar.google.com"
+                    className="font-mono text-sm"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Webhook Make.com</Label>
+                  <Input
+                    value={iaData.make_webhook_url}
+                    onChange={(e) => setIaData({ ...iaData, make_webhook_url: e.target.value })}
+                    placeholder="https://hook.eu2.make.com/..."
+                    className="font-mono text-sm"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Minutos contratados / mes</Label>
+                  <Input
+                    type="number" min="0"
+                    value={iaData.minutos_contratados}
+                    onChange={(e) => setIaData({ ...iaData, minutos_contratados: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Precio min. extra (€)</Label>
+                  <Input
+                    type="number" min="0" step="0.05"
+                    value={iaData.precio_minuto_extra}
+                    onChange={(e) => setIaData({ ...iaData, precio_minuto_extra: e.target.value })}
+                  />
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

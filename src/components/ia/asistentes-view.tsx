@@ -8,11 +8,18 @@ import { AudioPlayer } from "@/components/ia/audio-player"
 import { TranscripcionChat } from "@/components/ia/transcripcion-chat"
 import { formatDate, formatRelativeTime, cn } from "@/lib/utils"
 import type { InteraccionIA } from "@/types"
-import { Phone, Bot, Sparkles, AlertCircle } from "lucide-react"
+import { Phone, Bot, Sparkles, AlertCircle, Star } from "lucide-react"
 
 interface AsistentesViewProps {
   todos: boolean
 }
+
+const TAGS_FEEDBACK = [
+  { key: "venta_exitosa", label: "Venta exitosa" },
+  { key: "alucinacion", label: "Alucinación" },
+  { key: "corte_audio", label: "Corte de audio" },
+  { key: "info_incompleta", label: "Info incompleta" },
+]
 
 export function AsistentesView({ todos }: AsistentesViewProps) {
   const supabase = useSupabase()
@@ -20,6 +27,30 @@ export function AsistentesView({ todos }: AsistentesViewProps) {
   const [error, setError] = useState("")
   const [items, setItems] = useState<InteraccionIA[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
+
+  const valorar = async (id: string, valoracion: number) => {
+    const actual = items.find((i) => i.id === id)
+    const nueva = actual?.valoracion === valoracion ? null : valoracion
+    setItems(items.map((i) => (i.id === id ? { ...i, valoracion: nueva ?? undefined } : i)))
+    const { error } = await supabase
+      .from("interacciones_ia")
+      .update({ valoracion: nueva })
+      .eq("id", id)
+    if (error) console.error("Error guardando valoración:", error)
+  }
+
+  const toggleTag = async (id: string, tag: string) => {
+    const actual = items.find((i) => i.id === id)
+    if (!actual) return
+    const actuales = actual.valoracion_tags || []
+    const nuevas = actuales.includes(tag) ? actuales.filter((t) => t !== tag) : [...actuales, tag]
+    setItems(items.map((i) => (i.id === id ? { ...i, valoracion_tags: nuevas } : i)))
+    const { error } = await supabase
+      .from("interacciones_ia")
+      .update({ valoracion_tags: nuevas })
+      .eq("id", id)
+    if (error) console.error("Error guardando tags:", error)
+  }
 
   useEffect(() => {
     const cargar = async () => {
@@ -144,6 +175,52 @@ export function AsistentesView({ todos }: AsistentesViewProps) {
                       <Sparkles className="h-3.5 w-3.5" /> Resumen IA
                     </p>
                     <p className="text-sm leading-relaxed">{seleccionada.resumen}</p>
+                  </div>
+                )}
+
+                {todos && (
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4 space-y-3">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Calidad de la interacción
+                    </p>
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <button
+                          key={n}
+                          onClick={() => valorar(seleccionada.id, n)}
+                          aria-label={`Valorar ${n} estrellas`}
+                          className="p-0.5 transition-transform hover:scale-110"
+                        >
+                          <Star
+                            className={cn(
+                              "h-5 w-5",
+                              (seleccionada.valoracion ?? 0) >= n
+                                ? "text-amber-400 fill-amber-400"
+                                : "text-muted-foreground/40"
+                            )}
+                          />
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {TAGS_FEEDBACK.map((tag) => {
+                        const activo = (seleccionada.valoracion_tags || []).includes(tag.key)
+                        return (
+                          <button
+                            key={tag.key}
+                            onClick={() => toggleTag(seleccionada.id, tag.key)}
+                            className={cn(
+                              "rounded-pill border px-2.5 py-1 text-[0.65rem] transition-colors",
+                              activo
+                                ? "border-primary/50 bg-primary/15 text-primary"
+                                : "border-white/10 text-muted-foreground hover:text-foreground"
+                            )}
+                          >
+                            {tag.label}
+                          </button>
+                        )
+                      })}
+                    </div>
                   </div>
                 )}
 
