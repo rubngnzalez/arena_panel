@@ -21,7 +21,7 @@
     /* ── Tokens shadcn (HSL) ── */
     --background: 0 0% 0%; /* negro puro */
     --foreground: 0 0% 100%;
-    --card: 0 0% 4%; /* #0a0a0a */
+    --card: 0 0% 3.5%; /* #090909 */
     --card-foreground: 0 0% 100%;
     --popover: 0 0% 4%;
     --popover-foreground: 0 0% 100%;
@@ -30,7 +30,7 @@
     --secondary: 0 0% 9%;
     --secondary-foreground: 0 0% 100%;
     --muted: 0 0% 9%;
-    --muted-foreground: 0 0% 55%;
+    --muted-foreground: 0 0% 62%;
     --accent: var(--arena-cyan-hsl);
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84% 60%;
@@ -55,6 +55,7 @@
 
   html {
     scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
@@ -65,6 +66,7 @@
     font-weight: 300;
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
 
   body::before {
@@ -98,115 +100,121 @@
     letter-spacing: -0.02em;
   }
 
-  /* Scrollbar con gradiente de marca */
+  /* Scrollbar discreta */
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 5px;
+    height: 5px;
   }
   ::-webkit-scrollbar-track {
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, #787dff, #01a9f2);
+    background: rgba(255, 255, 255, 0.12);
     border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(120, 125, 255, 0.45);
   }
 
   ::selection {
-    background: rgba(120, 125, 255, 0.35);
+    background: rgba(120, 125, 255, 0.3);
     color: #fff;
+  }
+
+  /* Focus consistente y limpio en toda la app */
+  :focus-visible {
+    outline: 2px solid rgba(120, 125, 255, 0.5);
+    outline-offset: 2px;
   }
 }
 
 @layer components {
   /* ── Liquid Glass (efecto característico de arenatrece.com) ── */
   .glass {
-    background: rgba(10, 10, 14, 0.45);
-    backdrop-filter: blur(22px) saturate(160%);
-    -webkit-backdrop-filter: blur(22px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45),
-      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    background: rgba(10, 10, 14, 0.5);
+    backdrop-filter: blur(18px) saturate(150%);
+    -webkit-backdrop-filter: blur(18px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
   }
 
   .glass-strong {
-    background: rgba(10, 10, 14, 0.7);
-    backdrop-filter: blur(22px) saturate(160%);
-    -webkit-backdrop-filter: blur(22px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55),
-      inset 0 1px 0 rgba(255, 255, 255, 0.06),
-      inset 0 0 0 1px rgba(120, 125, 255, 0.04);
+    background: rgba(8, 8, 12, 0.78);
+    backdrop-filter: blur(20px) saturate(150%);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
   }
 
-  /* Card Arena13 (glass + pill suave) */
+  /* Card Arena13 (glass + pill suave) — hover sereno, sin saltos */
   .arena-card {
     @apply glass rounded-2xl p-6;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease,
-      transform 0.3s ease;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
   }
   .arena-card:hover {
-    border-color: rgba(120, 125, 255, 0.35);
-    box-shadow: var(--arena-glow-purple), 0 8px 32px rgba(0, 0, 0, 0.55);
-    transform: translateY(-2px);
+    border-color: rgba(120, 125, 255, 0.22);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4),
+      0 0 0 1px rgba(120, 125, 255, 0.06);
   }
 
   /* Botón gradiente de marca */
   .arena-btn {
     @apply relative inline-flex items-center justify-center gap-2 px-5 py-2.5;
     border-radius: 999px;
-    font-size: 0.75rem;
+    font-size: 0.8125rem;
     font-weight: 500;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    letter-spacing: 0.01em;
     color: #fff;
     background: var(--arena-gradient);
     background-size: 150% 100%;
-    box-shadow: var(--arena-glow-purple);
-    transition: background-position 0.4s ease, transform 0.25s ease,
-      box-shadow 0.3s ease;
+    box-shadow: 0 2px 12px rgba(120, 125, 255, 0.22);
+    transition: background-position 0.4s ease, box-shadow 0.25s ease,
+      transform 0.15s ease;
   }
   .arena-btn:hover {
     background-position: 100% 0;
-    transform: scale(1.03);
-    box-shadow: 0 0 32px rgba(120, 125, 255, 0.55);
+    box-shadow: 0 4px 20px rgba(120, 125, 255, 0.4);
+  }
+  .arena-btn:active {
+    transform: scale(0.98);
   }
 
   /* Botón outline glass */
   .arena-btn-outline {
     @apply relative inline-flex items-center justify-center gap-2 px-5 py-2.5;
     border-radius: 999px;
-    font-size: 0.75rem;
+    font-size: 0.8125rem;
     font-weight: 500;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    letter-spacing: 0.01em;
     color: #fff;
-    background: rgba(10, 10, 14, 0.6);
-    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(8px);
     border: 1px solid rgba(255, 255, 255, 0.12);
-    transition: all 0.25s ease;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
   }
   .arena-btn-outline:hover {
-    border-color: rgba(120, 125, 255, 0.5);
-    box-shadow: var(--arena-glow-purple);
+    border-color: rgba(120, 125, 255, 0.45);
+    box-shadow: 0 0 0 1px rgba(120, 125, 255, 0.12);
   }
 
-  /* Input con focus gradiente */
+  /* Input con focus limpio */
   .arena-input {
     @apply w-full bg-transparent px-4 py-2.5;
     border-radius: 999px;
     border: 1px solid hsl(var(--border));
     color: #fafafa;
     font-size: 0.875rem;
-    transition: all 0.25s ease;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
   }
   .arena-input::placeholder {
     color: hsl(var(--muted-foreground));
   }
   .arena-input:focus {
     outline: none;
-    border-color: var(--arena-purple);
-    box-shadow: 0 0 0 3px rgba(120, 125, 255, 0.15),
-      var(--arena-glow-purple);
+    border-color: rgba(120, 125, 255, 0.6);
+    box-shadow: 0 0 0 3px rgba(120, 125, 255, 0.12);
   }
 
   /* Badge minimalista */
@@ -215,7 +223,7 @@
     border-radius: 999px;
     font-size: 0.7rem;
     font-weight: 500;
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     background: rgba(255, 255, 255, 0.04);
   }
 

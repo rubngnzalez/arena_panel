@@ -138,11 +138,11 @@ export function Sidebar({ user, unreadNotifications = 0, onCloseMobile, onLogout
       <nav className="flex-1 px-3 overflow-y-auto">
         {sectionsWithBadges.map((section) => (
           <div key={section.title} className="mb-6">
-            <h3 className="px-4 mb-2 text-[0.65rem] font-medium text-muted-foreground/60 uppercase tracking-widest2">
+            <h3 className="px-4 mb-2 text-[0.6rem] font-medium text-muted-foreground/50 uppercase tracking-widest2">
               {section.title}
             </h3>
 
-            <div className="space-y-1">
+            <div className="space-y-0.5">
               {section.items.map((item) => {
                 const isActive = pathname === item.href || pathname?.startsWith(item.href + "/")
                 const Icon = item.icon
@@ -153,15 +153,15 @@ export function Sidebar({ user, unreadNotifications = 0, onCloseMobile, onLogout
                     href={item.href}
                     onClick={() => isMobile && onCloseMobile?.()}
                     className={cn(
-                      "group relative flex items-center gap-3 px-4 py-2.5 rounded-pill text-sm transition-all duration-300 overflow-hidden",
+                      "group relative flex items-center gap-3 px-4 py-2 rounded-pill text-sm transition-all duration-200 overflow-hidden",
                       isActive
                         ? "text-white"
-                        : "text-muted-foreground hover:text-foreground hover:bg-white/[0.03]"
+                        : "text-muted-foreground hover:text-foreground hover:bg-white/[0.04]"
                     )}
                   >
                     {/* Fondo gradiente activo */}
                     {isActive && (
-                      <span className="absolute inset-0 bg-arena-gradient opacity-90 shadow-glow-purple" />
+                      <span className="absolute inset-0 bg-arena-gradient opacity-80" />
                     )}
                     <Icon className={cn(
                       "relative h-4 w-4 shrink-0 transition-colors",
@@ -178,7 +178,7 @@ export function Sidebar({ user, unreadNotifications = 0, onCloseMobile, onLogout
                     )}
                     {/* Barra indicadora lateral */}
                     {!isActive && (
-                      <span className="absolute left-0 top-1/2 h-0 w-0.5 -translate-y-1/2 rounded-pill bg-arena-gradient opacity-0 transition-all duration-300 group-hover:h-1/2 group-hover:opacity-100" />
+                      <span className="absolute left-0 top-1/2 h-0 w-0.5 -translate-y-1/2 rounded-pill bg-arena-gradient opacity-0 transition-all duration-200 group-hover:h-1/2 group-hover:opacity-100" />
                     )}
                   </Link>
                 )

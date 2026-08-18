@@ -55,7 +55,7 @@ export function DashboardHeader({
               <div className="flex items-center gap-2">
                 <Input
                   placeholder="Buscar..."
-                  className="h-9 w-48"
+                  className="h-9 w-36 sm:w-48"
                   autoFocus
                   onBlur={() => setSearchOpen(false)}
                 />
@@ -83,7 +83,7 @@ export function DashboardHeader({
                   )}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-80 p-0 glass-strong rounded-2xl border-white/10" align="end">
+              <PopoverContent className="w-80 max-w-[calc(100vw-2rem)] p-0 glass-strong rounded-2xl border-white/10" align="end">
                 <div className="p-4 border-b border-white/5">
                   <h3 className="text-sm font-medium">Notificaciones</h3>
                 </div>

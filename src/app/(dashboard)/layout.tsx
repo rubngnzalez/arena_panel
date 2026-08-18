@@ -6,6 +6,7 @@ import { useSupabase } from "@/lib/supabase/client"
 import { isFeatureEnabled } from "@/lib/features"
 import { Sidebar } from "@/components/dashboard/sidebar"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
+import { CommandBar } from "@/components/command-bar"
 
 export default function DashboardLayout({
   children,
@@ -68,6 +69,8 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen">
+      <CommandBar />
+
       {/* Header móvil */}
       <DashboardHeader
         onMenuClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -113,6 +116,10 @@ export default function DashboardLayout({
                 <p className="text-sm text-gradient font-medium mt-0.5">Arena13</p>
               </div>
               <div className="flex items-center gap-2">
+                <span className="hidden xl:inline-flex items-center gap-1.5 text-xs text-muted-foreground font-light mr-2">
+                  <kbd className="rounded-pill border border-white/10 bg-white/5 px-1.5 py-0.5 text-[0.65rem]">Ctrl K</kbd>
+                  búsqueda rápida
+                </span>
                 <span className="text-xs text-muted-foreground font-light">Diseño de Producto Digital & IA</span>
                 <span className="h-2 w-2 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.6)]" />
               </div>

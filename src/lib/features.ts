@@ -63,7 +63,7 @@ export const FEATURES: Record<string, FeatureConfig> = {
   },
 
   banners: {
-    enabled: true,
+    enabled: false,
     label: 'Banners y Promociones',
     description: 'Banners promocionales configurables con caducidad',
     category: 'comunicacion',
@@ -77,7 +77,7 @@ export const FEATURES: Record<string, FeatureConfig> = {
   },
 
   newsletter: {
-    enabled: true,
+    enabled: false,
     label: 'Newsletter',
     description: 'Envío de newsletters a clientes',
     category: 'comunicacion',

@@ -314,10 +314,27 @@ export interface Presupuesto {
   iva_porcentaje: number
   notas?: string
   notas_internas?: string
+  token_publico?: string
+  respondido_at?: string
+  proyecto_generado_id?: string
   created_by?: string
   created_at: string
   updated_at: string
   lineas?: PresupuestoLinea[]
+}
+
+// ============================================
+// Imputaciones de horas (time tracking)
+// ============================================
+export interface ImputacionHoras {
+  id: string
+  proyecto_id: string
+  usuario_id?: string
+  inicio: string
+  fin?: string
+  duracion_minutos?: number
+  descripcion?: string
+  created_at: string
 }
 
 // ============================================

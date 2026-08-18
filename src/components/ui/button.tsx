@@ -4,14 +4,14 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-normal transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98] [&_svg]:pointer-events-none [&_svg]:shrink-0",
   {
     variants: {
       variant: {
         default:
-          "rounded-pill bg-arena-gradient bg-[length:150%_100%] bg-left text-white shadow-glow-purple hover:bg-right hover:scale-[1.03] hover:shadow-[0_0_32px_rgba(120,125,255,0.55)]",
+          "rounded-pill bg-arena-gradient bg-[length:150%_100%] bg-left text-white shadow-[0_2px_12px_rgba(120,125,255,0.22)] hover:bg-right hover:shadow-[0_4px_20px_rgba(120,125,255,0.4)]",
         secondary:
-          "rounded-pill glass text-foreground hover:border-primary/50 hover:shadow-glow-purple",
+          "rounded-pill glass text-foreground hover:border-primary/40",
         outline:
           "rounded-pill border border-border bg-transparent text-foreground hover:border-primary/50 hover:text-primary hover:bg-primary/5",
         ghost: "rounded-pill hover:bg-primary/10 hover:text-primary",

@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select"
 import {
   ArrowLeft, Plus, Trash2, Calculator, FileText, Check, X, Printer,
-  Send, Copy, TrendingUp, Euro, Calendar,
+  Send, Copy, TrendingUp, Euro, Calendar, Link2,
 } from "lucide-react"
 import { formatCurrency, formatDate, getInitials } from "@/lib/utils"
 import type { Presupuesto, PresupuestoLinea, PresupuestoEstado } from "@/types"
@@ -48,6 +48,7 @@ export default function PresupuestosPage() {
   const [detalle, setDetalle] = useState<Presupuesto | null>(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
+  const [copiado, setCopiado] = useState(false)
 
   // Form state
   const [form, setForm] = useState({
@@ -181,12 +182,38 @@ export default function PresupuestosPage() {
     }
   }
 
+  // Garantiza que el presupuesto tiene token público; lo genera si falta
+  const asegurarToken = async (p: Presupuesto): Promise<string | null> => {
+    if (p.token_publico) return p.token_publico
+    const token = crypto.randomUUID().replace(/-/g, "").slice(0, 24)
+    const { error } = await supabase.from("presupuestos").update({ token_publico: token }).eq("id", p.id)
+    if (error) return null
+    setPresupuestos((prev) => prev.map((x) => (x.id === p.id ? { ...x, token_publico: token } : x)))
+    if (detalle?.id === p.id) setDetalle({ ...detalle, token_publico: token })
+    return token
+  }
+
+  const copiarEnlacePublico = async (p: Presupuesto) => {
+    const token = await asegurarToken(p)
+    if (!token) { setError("No se pudo generar el enlace público."); return }
+    const url = `${window.location.origin}/presupuesto?token=${token}`
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopiado(true)
+      setTimeout(() => setCopiado(false), 2000)
+    } catch {
+      setError(`Enlace: ${url}`)
+    }
+  }
+
   const cambiarEstado = async (p: Presupuesto, estado: PresupuestoEstado) => {
     try {
       const { error } = await supabase.from("presupuestos").update({ estado }).eq("id", p.id)
       if (error) throw error
       setPresupuestos(presupuestos.map((x) => (x.id === p.id ? { ...x, estado } : x)))
       if (detalle?.id === p.id) setDetalle({ ...detalle, estado })
+      // Al enviar, generar el enlace de aprobación automáticamente
+      if (estado === "enviado") await asegurarToken({ ...p, estado })
     } catch (err) {
       console.error(err)
     }
@@ -342,6 +369,9 @@ export default function PresupuestosPage() {
               <Button variant="outline" size="sm" onClick={() => cambiarEstado(detalle, "enviado")} disabled={detalle.estado === "enviado"}>
                 <Send className="h-3.5 w-3.5 mr-1.5" /> Marcar enviado
               </Button>
+              <Button variant="outline" size="sm" onClick={() => copiarEnlacePublico(detalle)} disabled={detalle.estado === "borrador"}>
+                <Link2 className="h-3.5 w-3.5 mr-1.5" /> {copiado ? "¡Enlace copiado!" : "Copiar enlace de aprobación"}
+              </Button>
               <Button variant="outline" size="sm" className="text-green-400" onClick={() => cambiarEstado(detalle, "aceptado")} disabled={detalle.estado === "aceptado"}>
                 <Check className="h-3.5 w-3.5 mr-1.5" /> Aceptar
               </Button>
@@ -352,6 +382,11 @@ export default function PresupuestosPage() {
                 <Copy className="h-3.5 w-3.5 mr-1.5" /> Duplicar
               </Button>
             </div>
+            {detalle.respondido_at && (
+              <p className="text-xs text-muted-foreground mt-3 print:hidden">
+                Respuesta del cliente registrada el {formatDate(detalle.respondido_at)}
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>
