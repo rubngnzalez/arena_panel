@@ -27,6 +27,12 @@ function inicioDePeriodo(p: Periodo): Date {
   return d
 }
 
+/** Fin exacto del día de HOY en zona horaria local del visitante. */
+function finDeHoy(): Date {
+  const ahora = new Date()
+  return new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 23, 59, 59, 999)
+}
+
 /**
  * Parseo defensivo: nunca revienta con JSONB nulos o llamadas cortadas.
  */
@@ -49,12 +55,16 @@ function motivoDe(item: InteraccionIA): string {
 }
 
 interface ReporteInteraccionesPDFProps {
-  /** Título del informe; suele ser el nombre del cliente o "Todos los clientes" */
-  titulo?: string
+  /**
+   * Marca que encabeza el informe (marca blanca). En vistas de cliente se
+   * deriva automáticamente del cliente vinculado a las interacciones;
+   * en vistas de equipo puede pasarse explícitamente.
+   */
+  marca?: string
   className?: string
 }
 
-export function ReporteInteraccionesPDF({ titulo = "Todos los clientes", className }: ReporteInteraccionesPDFProps) {
+export function ReporteInteraccionesPDF({ marca, className }: ReporteInteraccionesPDFProps) {
   const supabase = useSupabase()
   const [periodo, setPeriodo] = useState<Periodo>("mes")
   const [items, setItems] = useState<InteraccionIA[]>([])
@@ -62,18 +72,29 @@ export function ReporteInteraccionesPDF({ titulo = "Todos los clientes", classNa
 
   const cargar = useCallback(async () => {
     setCargando(true)
-    const desde = inicioDePeriodo(periodo).toISOString()
-    const { data } = await supabase
+    let query = supabase
       .from("interacciones_ia")
       .select("*, cliente:clientes(id,nombre,empresa)")
-      .gte("created_at", desde)
+      .gte("created_at", inicioDePeriodo(periodo).toISOString())
       .order("created_at", { ascending: false })
       .limit(500)
+    if (periodo === "hoy") {
+      // Límite exacto: hasta las 23:59:59.999 locales del día en curso
+      query = query.lte("created_at", finDeHoy().toISOString())
+    }
+    const { data } = await query
     setItems((data as InteraccionIA[]) || [])
     setCargando(false)
   }, [supabase, periodo])
 
   useEffect(() => { cargar() }, [cargar])
+
+  // Marca blanca: nombre del cliente derivado de los datos (o prop)
+  const marcaInforme =
+    marca ||
+    items.find((i) => i.cliente?.empresa)?.cliente?.empresa ||
+    items.find((i) => i.cliente?.nombre)?.cliente?.nombre ||
+    "Informe de Servicio"
 
   const kpis = useMemo(() => {
     const llamadas = items.filter((i) => i.tipo === "llamada").length
@@ -113,21 +134,19 @@ export function ReporteInteraccionesPDF({ titulo = "Todos los clientes", classNa
       {/* Documento imprimible */}
       <div className="arena-card print:!border-0">
         <div className="p-6 sm:p-8 space-y-6">
-          {/* Cabecera */}
+          {/* Cabecera (marca blanca: cliente + título, sin proveedores) */}
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
             <div>
-              <p className="text-2xl font-semibold tracking-tight">
-                Arena<span className="text-gradient">13</span>
-              </p>
+              <p className="text-2xl font-semibold tracking-tight">{marcaInforme}</p>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Informe de interacciones de asistentes IA — Diseño de Producto Digital &amp; IA
+                Informe Ejecutivo de Asistente Virtual
               </p>
             </div>
             <div className="text-left sm:text-right">
               <p className="text-xs text-muted-foreground uppercase tracking-wider">Periodo auditado</p>
               <p className="font-medium capitalize">{periodoLabel}</p>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {items.length} interacciones · {titulo}
+                {items.length} interacciones
               </p>
             </div>
           </div>
@@ -183,13 +202,11 @@ export function ReporteInteraccionesPDF({ titulo = "Todos los clientes", classNa
                           </span>
                         </td>
                         <td className="p-2.5">
-                          <span className="inline-flex items-center gap-1">
-                            {item.tipo === "llamada" ? (
-                              <><Phone className="h-3 w-3" /> Voz</>
-                            ) : (
-                              <><Bot className="h-3 w-3" /> WhatsApp</>
-                            )}
-                          </span>
+                          {item.tipo === "llamada" ? (
+                            <span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" /> Llamada de Voz</span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1"><Bot className="h-3 w-3" /> WhatsApp</span>
+                          )}
                         </td>
                         <td className="p-2.5">
                           {nombreDe(item)}
@@ -208,7 +225,7 @@ export function ReporteInteraccionesPDF({ titulo = "Todos los clientes", classNa
           )}
 
           <p className="text-center text-[0.6rem] text-muted-foreground">
-            Generado el {new Date().toLocaleString("es-ES")} · Arena13 — arenatrece.com
+            Generado el {new Date().toLocaleString("es-ES")}
           </p>
         </div>
       </div>

@@ -13,7 +13,7 @@ export default function MonitorIaPage() {
         </p>
       </div>
       <AsistentesView todos />
-      <ReporteInteraccionesPDF titulo="Todos los clientes" />
+      <ReporteInteraccionesPDF marca="Resumen global de clientes" />
     </div>
   )
 }

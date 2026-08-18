@@ -21,6 +21,12 @@ const TAGS_FEEDBACK = [
   { key: "info_incompleta", label: "Info incompleta" },
 ]
 
+// Etiqueta de canal sin filtración de proveedor (marca blanca en vistas de cliente)
+const CANAL_LABEL: Record<string, string> = {
+  llamada: "Llamada de Voz",
+  chat: "WhatsApp",
+}
+
 export function AsistentesView({ todos }: AsistentesViewProps) {
   const supabase = useSupabase()
   const [loading, setLoading] = useState(true)
@@ -125,8 +131,8 @@ export function AsistentesView({ todos }: AsistentesViewProps) {
                         ? item.cliente?.empresa || item.cliente?.nombre || "Sin cliente"
                         : formatRelativeTime(item.created_at)}
                     </span>
-                    <Badge variant="outline" className="text-[0.65rem] shrink-0 capitalize">
-                      {item.origen || "ia"}
+                    <Badge variant="outline" className="text-[0.65rem] shrink-0">
+                      {CANAL_LABEL[item.tipo] || "Asistente IA"}
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground line-clamp-2">
@@ -160,7 +166,7 @@ export function AsistentesView({ todos }: AsistentesViewProps) {
                         : ""}
                     </p>
                   </div>
-                  <Badge variant="primary" className="capitalize">{seleccionada.origen || "ia"}</Badge>
+                  <Badge variant="primary">{CANAL_LABEL[seleccionada.tipo] || "Asistente IA"}</Badge>
                 </div>
 
                 {seleccionada.audio_url ? (

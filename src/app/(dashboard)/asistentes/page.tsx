@@ -13,7 +13,7 @@ export default function AsistentesPage() {
         </p>
       </div>
       <AsistentesView todos={false} />
-      <ReporteInteraccionesPDF titulo="Mi cuenta" />
+      <ReporteInteraccionesPDF />
     </div>
   )
 }
