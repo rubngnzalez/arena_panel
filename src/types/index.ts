@@ -426,8 +426,24 @@ export interface Lead {
   resumen_ia?: string
   nivel_interes: LeadNivelInteres
   estado: LeadEstado
-  metadata?: Record<string, any>
+  metadata?: LeadMetadata & Record<string, any>
   created_at: string
+}
+
+/** Metadatos que Make/Retell depositan en un lead de llamada */
+export interface LeadMetadata {
+  transcripcion?: TurnoTranscripcion[]
+  variables_extraidas?: {
+    nombre?: string
+    telefono?: string
+    empresa?: string
+    servicio?: string
+    motivo?: string
+    [k: string]: unknown
+  }
+  audio_url?: string
+  duracion_seg?: number
+  llamada_id?: string
 }
 
 // ============================================

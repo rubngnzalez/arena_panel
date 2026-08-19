@@ -5,17 +5,22 @@ import { useSupabase } from "@/lib/supabase/client"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
-import { formatRelativeTime } from "@/lib/utils"
+import {
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog"
+import { cn, formatRelativeTime, formatDate } from "@/lib/utils"
+import { AudioPlayer } from "@/components/ia/audio-player"
+import { TranscripcionChat } from "@/components/ia/transcripcion-chat"
 import type { Lead, LeadEstado } from "@/types"
 import {
   Inbox, Sparkles, Archive, Ban, FolderPlus, RefreshCw, Mail, Phone, Building2,
+  Clock, ChevronRight, Bot, MessageSquare, Globe, PhoneCall,
 } from "lucide-react"
 
 const ORIGEN_LABEL: Record<string, string> = {
-  retell: "Retell AI",
+  retell: "Llamada de Voz",
   whatsapp: "WhatsApp",
-  formulario: "Formulario",
+  formulario: "Formulario web",
   webhook: "Webhook",
   manual: "Manual",
 }
@@ -34,12 +39,26 @@ const FILTROS: { key: LeadEstado | "todos"; label: string }[] = [
   { key: "todos", label: "Todos" },
 ]
 
+function canalIcon(origen: string) {
+  if (origen === "whatsapp") return <MessageSquare className="h-3.5 w-3.5 text-primary" />
+  if (origen === "formulario" || origen === "webhook") return <Globe className="h-3.5 w-3.5 text-sky-400" />
+  return <PhoneCall className="h-3.5 w-3.5 text-accent" />
+}
+
+function duracionTexto(seg?: number): string {
+  if (!seg) return ""
+  const m = Math.floor(seg / 60)
+  const s = seg % 60
+  return `${m}m ${String(s).padStart(2, "0")}s`
+}
+
 export default function InboxPage() {
   const supabase = useSupabase()
   const [loading, setLoading] = useState(true)
   const [leads, setLeads] = useState<Lead[]>([])
   const [filtro, setFiltro] = useState<LeadEstado | "todos">("nuevo")
   const [ocupadoId, setOcupadoId] = useState<string | null>(null)
+  const [detalle, setDetalle] = useState<Lead | null>(null)
 
   const cargar = useCallback(async () => {
     const { data } = await supabase
@@ -69,6 +88,7 @@ export default function InboxPage() {
         (payload) => {
           const actualizado = payload.new as Lead
           setLeads((prev) => prev.map((l) => (l.id === actualizado.id ? actualizado : l)))
+          setDetalle((d) => (d && d.id === actualizado.id ? actualizado : d))
         }
       )
       .subscribe()
@@ -84,6 +104,7 @@ export default function InboxPage() {
       const { error } = await supabase.from("leads").update({ estado }).eq("id", lead.id)
       if (error) throw error
       setLeads(leads.map((l) => (l.id === lead.id ? { ...l, estado } : l)))
+      setDetalle((d) => (d && d.id === lead.id ? { ...d, estado } : d))
     } catch (err) {
       console.error(err)
     } finally {
@@ -149,6 +170,7 @@ export default function InboxPage() {
           ? { ...l, estado: "convertido", metadata: { ...(l.metadata || {}), proyecto_id: proyecto.id } }
           : l
       ))
+      setDetalle(null)
     } catch (err) {
       console.error(err)
     } finally {
@@ -170,7 +192,7 @@ export default function InboxPage() {
             )}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Triaje de leads en tiempo real (webhooks, Retell AI, WhatsApp, formularios)
+            Llamadas y contactos capturados por tus asistentes, en tiempo real
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={cargar}>
@@ -202,15 +224,19 @@ export default function InboxPage() {
             <Inbox className="h-12 w-12 text-muted-foreground/40 mb-4" />
             <p className="text-sm text-muted-foreground">
               {filtro === "nuevo"
-                ? "Bandaja vacía: no hay leads pendientes de triaje."
-                : "No hay leads en este estado."}
+                ? "Bandeja vacía: no hay llamadas pendientes de revisar."
+                : "No hay registros en este estado."}
             </p>
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {filtrados.map((lead) => (
-            <Card key={lead.id} className="flex flex-col">
+            <Card
+              key={lead.id}
+              className="flex flex-col cursor-pointer hover:border-primary/30 transition-colors"
+              onClick={() => setDetalle(lead)}
+            >
               <CardContent className="p-5 flex flex-col flex-1">
                 <div className="flex items-center justify-between gap-2 mb-3">
                   <Badge variant="outline" className="text-[0.65rem]">
@@ -221,14 +247,11 @@ export default function InboxPage() {
                   </span>
                 </div>
 
-                <p className="font-medium mb-1 truncate">{lead.nombre || "Lead sin nombre"}</p>
+                <p className="font-medium mb-1 truncate">{lead.nombre || "Contacto no registrado"}</p>
 
                 <div className="space-y-1 mb-3 text-xs text-muted-foreground">
                   {lead.empresa && (
                     <p className="flex items-center gap-1.5"><Building2 className="h-3 w-3" /> {lead.empresa}</p>
-                  )}
-                  {lead.email && (
-                    <p className="flex items-center gap-1.5 truncate"><Mail className="h-3 w-3" /> {lead.email}</p>
                   )}
                   {lead.telefono && (
                     <p className="flex items-center gap-1.5"><Phone className="h-3 w-3" /> {lead.telefono}</p>
@@ -248,56 +271,143 @@ export default function InboxPage() {
                   </div>
                 )}
 
-                <p className="text-[0.65rem] text-muted-foreground/60 mb-4">
-                  {formatRelativeTime(lead.created_at)}
-                </p>
-
-                <div className="mt-auto flex flex-wrap gap-2">
-                  {lead.estado === "nuevo" && (
-                    <>
-                      <Button
-                        size="sm"
-                        className="flex-1"
-                        disabled={ocupadoId === lead.id}
-                        onClick={() => convertirEnProyecto(lead)}
-                      >
-                        <FolderPlus className="h-3.5 w-3.5" /> Convertir
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={ocupadoId === lead.id}
-                        onClick={() => cambiarEstado(lead, "archivado")}
-                      >
-                        <Archive className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive"
-                        disabled={ocupadoId === lead.id}
-                        onClick={() => cambiarEstado(lead, "spam")}
-                      >
-                        <Ban className="h-3.5 w-3.5" />
-                      </Button>
-                    </>
-                  )}
-                  {lead.estado !== "nuevo" && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={ocupadoId === lead.id}
-                      onClick={() => cambiarEstado(lead, "nuevo")}
-                    >
-                      <RefreshCw className="h-3.5 w-3.5 mr-1.5" /> Reactivar
-                    </Button>
-                  )}
+                <div className="mt-auto flex items-center justify-between">
+                  <div className="flex items-center gap-3 text-[0.65rem] text-muted-foreground/70">
+                    <span>{formatRelativeTime(lead.created_at)}</span>
+                    {lead.metadata?.duracion_seg ? (
+                      <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {duracionTexto(lead.metadata.duracion_seg)}</span>
+                    ) : null}
+                    {lead.metadata?.transcripcion && lead.metadata.transcripcion.length > 0 && (
+                      <span className="flex items-center gap-1"><Bot className="h-3 w-3" /> transcripción</span>
+                    )}
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
       )}
+
+      {/* ====== FICHA COMPLETA DE LA LLAMADA ====== */}
+      <Dialog open={!!detalle} onOpenChange={(open) => !open && setDetalle(null)}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          {detalle && (() => {
+            const vars = detalle.metadata?.variables_extraidas
+            const transcripcion = detalle.metadata?.transcripcion || []
+            const nombre = detalle.nombre || vars?.nombre || "Contacto no registrado"
+            const telefono = detalle.telefono || vars?.telefono || ""
+            const empresa = detalle.empresa || vars?.empresa || ""
+            return (
+              <>
+                <DialogHeader>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {canalIcon(detalle.origen)}
+                    <DialogTitle className="text-lg">
+                      {ORIGEN_LABEL[detalle.origen] || "Contacto"}
+                    </DialogTitle>
+                    <span className={cn("text-[0.65rem] px-2 py-0.5 rounded-pill border", NIVEL_STYLE[detalle.nivel_interes])}>
+                      Interés {detalle.nivel_interes}
+                    </span>
+                    {detalle.estado === "nuevo" && <Badge variant="primary">Nuevo</Badge>}
+                  </div>
+                  <DialogDescription>
+                    {formatDate(detalle.created_at, "long")}
+                    {detalle.metadata?.duracion_seg ? ` · ${duracionTexto(detalle.metadata.duracion_seg)}` : ""}
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-5">
+                  {/* Datos del contacto */}
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Contacto</p>
+                    <div className="grid sm:grid-cols-2 gap-2 text-sm">
+                      <p><span className="text-muted-foreground">Nombre:</span> {nombre}</p>
+                      <p className="flex items-center gap-1.5">
+                        <Phone className="h-3 w-3 text-muted-foreground" />
+                        {telefono || <span className="text-muted-foreground/50">No disponible</span>}
+                      </p>
+                      <p className="flex items-center gap-1.5">
+                        <Mail className="h-3 w-3 text-muted-foreground" />
+                        {detalle.email || <span className="text-muted-foreground/50">Sin email</span>}
+                      </p>
+                      <p className="flex items-center gap-1.5">
+                        <Building2 className="h-3 w-3 text-muted-foreground" />
+                        {empresa || <span className="text-muted-foreground/50">Sin empresa</span>}
+                      </p>
+                      {vars?.servicio && (
+                        <p className="col-span-2"><span className="text-muted-foreground">Servicio:</span> {vars.servicio}</p>
+                      )}
+                      {vars?.motivo && !vars?.servicio && (
+                        <p className="col-span-2"><span className="text-muted-foreground">Motivo:</span> {vars.motivo}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Audio de la llamada */}
+                  {detalle.metadata?.audio_url && (
+                    <AudioPlayer src={detalle.metadata.audio_url} duracionSeg={detalle.metadata.duracion_seg} />
+                  )}
+
+                  {/* Resumen IA */}
+                  {detalle.resumen_ia && (
+                    <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
+                      <p className="flex items-center gap-1.5 text-xs font-medium text-primary uppercase tracking-wider mb-2">
+                        <Sparkles className="h-3.5 w-3.5" /> Resumen
+                      </p>
+                      <p className="text-sm leading-relaxed">{detalle.resumen_ia}</p>
+                    </div>
+                  )}
+
+                  {/* Mensaje original (formularios) */}
+                  {detalle.mensaje && detalle.resumen_ia && (
+                    <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Mensaje</p>
+                      <p className="text-sm whitespace-pre-wrap">{detalle.mensaje}</p>
+                    </div>
+                  )}
+
+                  {/* Transcripción */}
+                  {transcripcion.length > 0 && (
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-4">
+                        Transcripción
+                      </p>
+                      <TranscripcionChat turnos={transcripcion} />
+                    </div>
+                  )}
+
+                  {/* Acciones */}
+                  <div className="pt-2 border-t border-white/5 flex flex-wrap gap-2">
+                    {detalle.estado === "nuevo" && (
+                      <>
+                        <Button
+                          className="flex-1"
+                          disabled={ocupadoId === detalle.id}
+                          onClick={() => convertirEnProyecto(detalle)}
+                        >
+                          <FolderPlus className="h-4 w-4 mr-1.5" /> Convertir en Proyecto
+                        </Button>
+                        <Button variant="outline" disabled={ocupadoId === detalle.id} onClick={() => cambiarEstado(detalle, "archivado")}>
+                          <Archive className="h-4 w-4 mr-1.5" /> Archivar
+                        </Button>
+                        <Button variant="ghost" className="text-destructive" disabled={ocupadoId === detalle.id} onClick={() => cambiarEstado(detalle, "spam")}>
+                          <Ban className="h-4 w-4 mr-1.5" /> Spam
+                        </Button>
+                      </>
+                    )}
+                    {detalle.estado !== "nuevo" && (
+                      <Button variant="outline" disabled={ocupadoId === detalle.id} onClick={() => cambiarEstado(detalle, "nuevo")}>
+                        <RefreshCw className="h-4 w-4 mr-1.5" /> Reactivar
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </>
+            )
+          })()}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

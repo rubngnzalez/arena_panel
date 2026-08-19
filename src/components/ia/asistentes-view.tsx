@@ -62,11 +62,39 @@ export function AsistentesView({ todos }: AsistentesViewProps) {
     const cargar = async () => {
       try {
         setError("")
-        const query = supabase
+        let query = supabase
           .from("interacciones_ia")
           .select("*, cliente:clientes(id,nombre,empresa)")
           .order("created_at", { ascending: false })
           .limit(100)
+
+        // Vista personal (todos=false): solo las interacciones del cliente
+        // vinculado al usuario (por email o usuario_auth_id)
+        if (!todos) {
+          const { data: { session } } = await supabase.auth.getSession()
+          const email = session?.user?.email
+          const uid = session?.user?.id
+          if (!email && !uid) {
+            setItems([])
+            setLoading(false)
+            return
+          }
+          const partes: string[] = []
+          if (email) partes.push(`email.eq.${JSON.stringify(email)}`)
+          if (uid) partes.push(`usuario_auth_id.eq.${uid}`)
+          const { data: cli } = await supabase
+            .from("clientes")
+            .select("id")
+            .or(partes.join(","))
+            .maybeSingle()
+          if (!cli?.id) {
+            setItems([])
+            setLoading(false)
+            return
+          }
+          query = query.eq("cliente_id", cli.id)
+        }
+
         const { data, error: err } = await query
         if (err) throw err
         setItems((data as InteraccionIA[]) || [])
@@ -78,7 +106,7 @@ export function AsistentesView({ todos }: AsistentesViewProps) {
       }
     }
     cargar()
-  }, [supabase])
+  }, [supabase, todos])
 
   const seleccionada = items.find((i) => i.id === selectedId) || null
 
