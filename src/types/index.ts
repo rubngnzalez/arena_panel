@@ -49,6 +49,7 @@ export interface Cliente {
   // Plan financiero (retainer + overage)
   plan_nombre?: string
   precio_base_mensual?: number
+  dia_pago?: number
   limite_minutos_incluidos?: number
   limite_mensajes_whatsapp_incluidos?: number
   precio_minuto_extra?: number

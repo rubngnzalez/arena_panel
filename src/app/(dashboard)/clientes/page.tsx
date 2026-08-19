@@ -44,6 +44,38 @@ const ESTADO_BADGES: Record<Cliente["estado"], { label: string; variant: any }> 
   potencial: { label: "Potencial", variant: "outline" },
 }
 
+const ROL_BADGES: Record<string, { label: string; cls: string }> = {
+  propietario: { label: "Propietario", cls: "text-purple-400 border-purple-400/30 bg-purple-400/10" },
+  admin: { label: "Admin", cls: "text-cyan-400 border-cyan-400/30 bg-cyan-400/10" },
+  editor: { label: "Editor", cls: "text-sky-400 border-sky-400/30 bg-sky-400/10" },
+  cliente: { label: "Cliente", cls: "text-blue-400 border-blue-400/30 bg-blue-400/10" },
+  colaborador: { label: "Colaborador", cls: "text-gray-400 border-gray-400/30 bg-gray-400/10" },
+}
+
+const PAGO_CLS: Record<string, string> = {
+  al_dia: "text-green-400",
+  pendiente_facturacion: "text-amber-400",
+  deuda_vencida: "text-red-400",
+}
+
+function proximoFechaPago(diaPago: number | undefined): Date {
+  const hoy = new Date()
+  const dia = Math.min(Math.max(diaPago || 1, 1), 28)
+  let fecha = new Date(hoy.getFullYear(), hoy.getMonth(), dia)
+  if (fecha <= hoy) {
+    const mesSig = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 1)
+    const ultimo = new Date(mesSig.getFullYear(), mesSig.getMonth() + 1, 0).getDate()
+    fecha = new Date(mesSig.getFullYear(), mesSig.getMonth(), Math.min(dia, ultimo))
+  }
+  return fecha
+}
+
+function pctConsumo(c: Cliente): number | null {
+  const limite = c.limite_minutos_incluidos ?? 0
+  if (limite <= 0) return null
+  return Math.round(((c.minutos_consumidos_mes ?? 0) / limite) * 100)
+}
+
 export default function ClientesPage() {
   const router = useRouter()
   const supabase = useSupabase()
@@ -51,6 +83,7 @@ export default function ClientesPage() {
   const [error, setError] = useState("")
   const [clientes, setClientes] = useState<Cliente[]>([])
   const [filteredClientes, setFilteredClientes] = useState<Cliente[]>([])
+  const [rolesPanel, setRolesPanel] = useState<Record<string, string>>({})
   const [searchTerm, setSearchTerm] = useState("")
   const [estadoFilter, setEstadoFilter] = useState<string>("todos")
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -100,7 +133,22 @@ export default function ClientesPage() {
         .select("*")
         .order("created_at", { ascending: false })
       if (error) throw error
-      setClientes((data || []) as Cliente[])
+      const lista = (data || []) as Cliente[]
+      setClientes(lista)
+
+      // Estatus en el panel: rol de los usuarios vinculados (perfiles_usuario)
+      const ids = lista.map((c) => c.usuario_auth_id).filter(Boolean) as string[]
+      if (ids.length > 0) {
+        const { data: perfiles } = await supabase
+          .from("perfiles_usuario")
+          .select("id, rol")
+          .in("id", ids)
+        const mapa: Record<string, string> = {}
+        for (const p of perfiles || []) mapa[p.id] = p.rol
+        setRolesPanel(mapa)
+      } else {
+        setRolesPanel({})
+      }
     } catch (err) {
       console.error("Error fetching clientes:", err)
       setError("No se pudieron cargar los clientes.")
@@ -301,82 +349,132 @@ export default function ClientesPage() {
         </Card>
       ) : (
         <div className="rounded-lg border border-white/5 overflow-hidden">
-          {/* Header de la tabla (desktop) */}
-          <div className="hidden md:grid grid-cols-[auto_1fr_1fr_auto_auto_auto] gap-4 px-4 py-3 bg-white/[0.02] border-b border-white/5 text-xs uppercase tracking-wider text-muted-foreground">
-            <div className="w-10" />
-            <div>Cliente</div>
-            <div>Contacto</div>
-            <div>Estado</div>
-            <div>Cliente desde</div>
-            <div className="w-10" />
-          </div>
+          <div className="overflow-x-auto">
+            {/* Header de la tabla (desktop) */}
+            <div className="hidden md:grid grid-cols-[auto_1.2fr_1fr_100px_110px_130px_130px_110px_28px] gap-4 px-4 py-3 bg-white/[0.02] border-b border-white/5 text-xs uppercase tracking-wider text-muted-foreground md:min-w-[1080px]">
+              <div className="w-10" />
+              <div>Cliente</div>
+              <div>Empresa</div>
+              <div>Estado</div>
+              <div>Acceso</div>
+              <div>Plan</div>
+              <div>Consumo mes</div>
+              <div>Próx. pago</div>
+              <div />
+            </div>
 
-          {/* Filas */}
-          <div className="divide-y divide-white/5">
-            {filteredClientes.map((cliente) => {
-              const estadoBadge = ESTADO_BADGES[cliente.estado] || ESTADO_BADGES.potencial
-              return (
-                <div
-                  key={cliente.id}
-                  className="grid grid-cols-[auto_1fr_auto] md:grid-cols-[auto_1fr_1fr_auto_auto_auto] gap-3 md:gap-4 items-center px-4 py-3 hover:bg-white/[0.03] transition-colors cursor-pointer group"
-                  onClick={() => abrirFicha(cliente.id)}
-                >
-                  {/* Avatar / Logo */}
-                  <div className="w-10 h-10 shrink-0">
-                    {cliente.logo_url ? (
-                      <img src={cliente.logo_url} alt={cliente.nombre}
-                        className="w-10 h-10 rounded-lg object-cover border border-white/10" />
-                    ) : (
-                      <div className="w-10 h-10 rounded-lg bg-arena-gradient flex items-center justify-center">
-                        <span className="text-xs font-semibold text-white">{getInitials(cliente.nombre)}</span>
-                      </div>
-                    )}
-                  </div>
+            {/* Filas */}
+            <div className="divide-y divide-white/5">
+              {filteredClientes.map((cliente) => {
+                const estadoBadge = ESTADO_BADGES[cliente.estado] || ESTADO_BADGES.potencial
+                const rolKey = cliente.usuario_auth_id ? rolesPanel[cliente.usuario_auth_id] : undefined
+                const rolBadge = rolKey ? ROL_BADGES[rolKey] : null
+                const pct = pctConsumo(cliente)
+                const fechaPago = proximoFechaPago(cliente.dia_pago)
+                const pagoCls = PAGO_CLS[cliente.estado_pago || "al_dia"] || PAGO_CLS.al_dia
+                return (
+                  <div
+                    key={cliente.id}
+                    className="grid grid-cols-[auto_1fr_28px] md:grid-cols-[auto_1.2fr_1fr_100px_110px_130px_130px_110px_28px] gap-3 md:gap-4 items-center px-4 py-3 hover:bg-white/[0.03] transition-colors cursor-pointer group md:min-w-[1080px]"
+                    onClick={() => abrirFicha(cliente.id)}
+                  >
+                    {/* Avatar / Logo */}
+                    <div className="w-10 h-10 shrink-0">
+                      {cliente.logo_url ? (
+                        <img src={cliente.logo_url} alt={cliente.nombre}
+                          className="w-10 h-10 rounded-lg object-cover border border-white/10" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-lg bg-arena-gradient flex items-center justify-center">
+                          <span className="text-xs font-semibold text-white">{getInitials(cliente.nombre)}</span>
+                        </div>
+                      )}
+                    </div>
 
-                  {/* Nombre + empresa */}
-                  <div className="min-w-0">
-                    <p className="font-medium truncate group-hover:text-primary transition-colors">{cliente.nombre}</p>
-                    {cliente.empresa && (
-                      <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
-                        <Building className="h-3 w-3" /> {cliente.empresa}
+                    {/* Nombre + contacto */}
+                    <div className="min-w-0">
+                      <p className="font-medium truncate group-hover:text-primary transition-colors">{cliente.nombre}</p>
+                      {cliente.email && (
+                        <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
+                          <Mail className="h-3 w-3" /> {cliente.email}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Empresa */}
+                    <div className="hidden md:block min-w-0">
+                      {cliente.empresa ? (
+                        <p className="text-sm truncate flex items-center gap-1.5">
+                          <Building className="h-3.5 w-3.5 text-muted-foreground shrink-0" /> {cliente.empresa}
+                        </p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground/50">—</p>
+                      )}
+                    </div>
+
+                    {/* Estado CRM */}
+                    <div className="hidden md:block">
+                      <Badge variant={estadoBadge.variant}>{estadoBadge.label}</Badge>
+                    </div>
+
+                    {/* Estatus en el panel */}
+                    <div className="hidden md:block">
+                      {rolBadge ? (
+                        <span className={`inline-flex items-center rounded-pill border px-2 py-0.5 text-[0.65rem] font-medium ${rolBadge.cls}`}>
+                          {rolBadge.label}
+                        </span>
+                      ) : (
+                        <span className="text-[0.65rem] text-muted-foreground/60">Sin acceso</span>
+                      )}
+                    </div>
+
+                    {/* Plan contratado */}
+                    <div className="hidden md:block min-w-0">
+                      <p className="text-sm font-medium truncate">{cliente.plan_nombre || "—"}</p>
+                      {cliente.precio_base_mensual != null && cliente.precio_base_mensual > 0 && (
+                        <p className="text-xs text-muted-foreground">{cliente.precio_base_mensual} €/mes</p>
+                      )}
+                    </div>
+
+                    {/* Consumo del mes */}
+                    <div className="hidden md:block">
+                      {pct === null ? (
+                        <p className="text-xs text-muted-foreground/60">Sin cupo</p>
+                      ) : (
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-[0.65rem] tabular-nums">
+                            <span className="text-muted-foreground">{cliente.minutos_consumidos_mes ?? 0}/{cliente.limite_minutos_incluidos} min</span>
+                            <span className={pct >= 100 ? "text-red-400" : pct >= 80 ? "text-amber-400" : "text-muted-foreground"}>{pct}%</span>
+                          </div>
+                          <div className="h-1.5 bg-white/10 rounded-pill overflow-hidden">
+                            <div
+                              className={`h-full rounded-pill ${pct >= 100 ? "bg-red-400" : pct >= 80 ? "bg-amber-400" : "bg-arena-gradient"}`}
+                              style={{ width: `${Math.min(pct, 100)}%` }}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Próximo pago */}
+                    <div className="hidden md:block">
+                      <p className={`text-sm font-medium tabular-nums ${pagoCls}`}>
+                        {fechaPago.toLocaleDateString("es-ES", { day: "2-digit", month: "short" })}
                       </p>
-                    )}
-                  </div>
-
-                  {/* Contacto */}
-                  <div className="hidden md:block min-w-0 space-y-0.5">
-                    {cliente.email ? (
-                      <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
-                        <Mail className="h-3 w-3" /> {cliente.email}
+                      <p className="text-[0.65rem] text-muted-foreground">
+                        {cliente.estado_pago === "deuda_vencida" ? "Deuda vencida"
+                          : cliente.estado_pago === "pendiente_facturacion" ? "Pendiente"
+                          : "Al día"}
                       </p>
-                    ) : (
-                      <p className="text-xs text-muted-foreground/50">Sin email</p>
-                    )}
-                    {cliente.telefono && (
-                      <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
-                        <Phone className="h-3 w-3" /> {cliente.telefono}
-                      </p>
-                    )}
-                  </div>
+                    </div>
 
-                  {/* Estado */}
-                  <div className="hidden md:block">
-                    <Badge variant={estadoBadge.variant}>{estadoBadge.label}</Badge>
+                    {/* Acción */}
+                    <div className="flex items-center justify-end">
+                      <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                    </div>
                   </div>
-
-                  {/* Fecha */}
-                  <div className="hidden md:flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <Calendar className="h-3 w-3" />
-                    {cliente.fecha_captacion ? formatDate(cliente.fecha_captacion) : formatRelativeTime(cliente.created_at)}
-                  </div>
-
-                  {/* Acción */}
-                  <div className="flex items-center justify-end">
-                    <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                  </div>
-                </div>
-              )
-            })}
+                )
+              })}
+            </div>
           </div>
         </div>
       )}
