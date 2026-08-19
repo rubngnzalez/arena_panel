@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState, useCallback } from "react"
 import { useSearchParams } from "next/navigation"
 import { useSupabase } from "@/lib/supabase/client"
+import { BrandLogo } from "@/components/brand-logo"
 import { formatCurrency, formatDate } from "@/lib/utils"
 import {
   Check, X, AlertCircle, CheckCircle2, XCircle, Calendar, Clock,
@@ -113,10 +114,9 @@ function PresupuestoPublicoContent() {
       <div className="max-w-3xl mx-auto space-y-6">
         {/* Marca */}
         <div className="text-center">
-          <span className="text-2xl font-semibold tracking-tight">Arena<span className="text-gradient">13</span></span>
-          <p className="text-xs text-muted-foreground tracking-widest2 uppercase mt-1">
-            Arena13 · Diseño de Producto Digital &amp; IA
-          </p>
+          <div className="inline-flex items-center justify-center">
+            <BrandLogo imgClassName="h-14" fallbackSize="text-3xl" />
+          </div>
         </div>
 
         {/* Banner de estado */}
@@ -256,7 +256,7 @@ function PresupuestoPublicoContent() {
         </div>
 
         <p className="text-center text-xs text-muted-foreground">
-          Arena13 — Diseño de Producto Digital &amp; IA · arenatrece.com
+          arenatrece.com
         </p>
       </div>
     </div>

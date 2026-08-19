@@ -75,28 +75,19 @@ export default function LoginPage() {
       <div className="w-full max-w-sm space-y-10 animate-fade-in">
         {/* Logo */}
         <div className="text-center">
-          <div className="inline-flex items-center justify-center mb-4">
+          <div className="inline-flex items-center justify-center">
             <BrandLogo
-              className="drop-shadow-[0_0_14px_rgba(120,125,255,0.35)]"
-              imgClassName="h-16"
-              fallbackSize="text-4xl"
+              className="drop-shadow-[0_0_18px_rgba(120,125,255,0.4)]"
+              imgClassName="h-24"
+              fallbackSize="text-5xl"
             />
           </div>
-          <h1 className="text-3xl font-medium tracking-tight mb-1.5">
-            Arena<span className="text-gradient">13</span>
-          </h1>
-          <p className="text-xs text-muted-foreground uppercase tracking-widest2 font-light">
-            Panel de Gestión
-          </p>
         </div>
 
         {/* Login Form */}
         <div className="glass-strong rounded-2xl p-7 space-y-6">
           <div className="space-y-1.5 text-center">
             <h2 className="text-lg font-medium tracking-tight">Acceso al panel</h2>
-            <p className="text-xs text-muted-foreground font-light">
-              Diseño de Producto Digital & IA
-            </p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4">

@@ -8,6 +8,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
+import { BrandLogo } from "@/components/brand-logo"
 import {
   Home, Users, Briefcase, FolderKanban, LifeBuoy, FileText,
   Bell, Settings, Grid3x3, Layers, Calculator, Receipt,
@@ -233,7 +234,7 @@ export function CommandBar() {
             <kbd className="rounded-pill border border-white/10 bg-white/5 px-1.5 py-0.5">↑↓</kbd> navegar
             <kbd className="rounded-pill border border-white/10 bg-white/5 px-1.5 py-0.5">↵</kbd> abrir
           </span>
-          <span>Arena13</span>
+          <BrandLogo imgClassName="h-5" fallbackSize="text-sm" />
         </div>
       </DialogContent>
     </Dialog>

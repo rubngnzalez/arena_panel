@@ -7,6 +7,7 @@ import { Sidebar } from "@/components/dashboard/sidebar"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { CommandBar } from "@/components/command-bar"
 import { SplashScreen } from "@/components/splash-screen"
+import { BrandLogo } from "@/components/brand-logo"
 import { obtenerRol, esRutaPermitidaCliente, type Rol } from "@/lib/roles"
 
 export default function DashboardLayout({
@@ -136,9 +137,7 @@ export default function DashboardLayout({
                     <p className="text-sm text-gradient font-medium mt-0.5">{nombreComercial}</p>
                   </>
                 ) : (
-                  <p className="text-sm text-gradient font-medium tracking-tight">
-                    {nombreComercial || "Arena13"}
-                  </p>
+                  <BrandLogo imgClassName="h-8" fallbackSize="text-xl" />
                 )}
               </div>
               <div className="flex items-center gap-3">

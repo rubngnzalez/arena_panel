@@ -5,6 +5,7 @@
  */
 
 import Link from "next/link"
+import { BrandLogo } from "@/components/brand-logo"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {
@@ -89,14 +90,8 @@ export default function DashboardPreviewPage() {
       <aside className="hidden lg:flex flex-col w-64 min-h-screen fixed left-0 top-0 glass-strong border-r border-white/5">
         {/* Logo */}
         <div className="p-6">
-          <Link href="/" className="flex items-center gap-2.5">
-            <span className="relative flex h-9 w-9 items-center justify-center rounded-pill bg-arena-gradient shadow-glow-purple">
-              <span className="text-sm font-semibold text-white">A</span>
-            </span>
-            <div className="leading-none">
-              <span className="block text-base font-medium tracking-tight">Arena<span className="text-gradient">13</span></span>
-              <span className="block text-[0.65rem] font-light text-muted-foreground tracking-widest2 uppercase mt-0.5">Panel</span>
-            </div>
+          <Link href="/" className="flex items-center">
+            <BrandLogo imgClassName="h-9" fallbackSize="text-xl" />
           </Link>
         </div>
 
@@ -168,14 +163,15 @@ export default function DashboardPreviewPage() {
             <div className="py-6 flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground uppercase tracking-widest2 font-light">Panel de Gestión</p>
-                <p className="text-sm text-gradient font-medium mt-0.5">Arena13</p>
+                <div className="mt-1">
+                  <BrandLogo imgClassName="h-7" fallbackSize="text-lg" />
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <span className="arena-badge text-arena-cyan border-arena-cyan/40 bg-arena-cyan/10">
                   <Sparkles className="h-3 w-3" />
                   Demo Mode
                 </span>
-                <span className="text-xs text-muted-foreground font-light hidden xl:inline">Diseño de Producto Digital & IA</span>
               </div>
             </div>
           </div>
@@ -358,7 +354,7 @@ export default function DashboardPreviewPage() {
           {/* Footer */}
           <div className="pt-6 border-t border-white/5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <p className="text-xs text-muted-foreground font-light">
-              Arena13 — Diseño de Producto Digital & IA
+              arenatrece.com
             </p>
             <Link
               href="/"

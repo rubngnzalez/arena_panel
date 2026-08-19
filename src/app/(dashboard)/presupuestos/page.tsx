@@ -16,6 +16,7 @@ import {
   Send, Copy, TrendingUp, Euro, Calendar, Link2, LayoutTemplate, BookmarkPlus,
 } from "lucide-react"
 import { formatCurrency, formatDate, getInitials } from "@/lib/utils"
+import { BrandLogo } from "@/components/brand-logo"
 import type { Presupuesto, PresupuestoLinea, PresupuestoEstado, PlantillaPresupuesto } from "@/types"
 
 const ESTADOS: Record<PresupuestoEstado, { label: string; color: string }> = {
@@ -360,10 +361,10 @@ export default function PresupuestosPage() {
             <div className="flex items-start justify-between mb-8">
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xl font-bold">Arena13</span>
+                  <BrandLogo imgClassName="h-9" fallbackSize="text-xl" />
                   <span className={`text-xs px-2 py-0.5 rounded-full ${est.color}`}>{est.label}</span>
                 </div>
-                <p className="text-xs text-muted-foreground">Diseño de Producto Digital & IA</p>
+                <p className="text-xs text-muted-foreground">arenatrece.com</p>
               </div>
               <div className="text-right">
                 <p className="text-sm text-muted-foreground">Presupuesto</p>

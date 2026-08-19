@@ -10,6 +10,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import { BrandLogo } from "@/components/brand-logo"
 
 interface DashboardHeaderProps {
   onMenuClick: () => void
@@ -46,7 +47,7 @@ export function DashboardHeader({
                 <Menu className="h-4 w-4" />
               )}
             </button>
-            <span className="text-sm font-medium">Arena<span className="text-gradient">13</span></span>
+            <BrandLogo imgClassName="h-7" fallbackSize="text-lg" />
           </div>
 
           {/* Right side */}
