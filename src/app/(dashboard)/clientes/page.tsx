@@ -354,7 +354,7 @@ export default function ClientesPage() {
             <div className="hidden md:grid grid-cols-[auto_1.2fr_1fr_100px_110px_130px_130px_110px_28px] gap-4 px-4 py-3 bg-white/[0.02] border-b border-white/5 text-xs uppercase tracking-wider text-muted-foreground md:min-w-[1080px]">
               <div className="w-10" />
               <div>Cliente</div>
-              <div>Empresa</div>
+              <div>Contacto</div>
               <div>Estado</div>
               <div>Acceso</div>
               <div>Plan</div>
@@ -390,24 +390,33 @@ export default function ClientesPage() {
                       )}
                     </div>
 
-                    {/* Nombre + contacto */}
+                    {/* Nombre + empresa */}
                     <div className="min-w-0">
                       <p className="font-medium truncate group-hover:text-primary transition-colors">{cliente.nombre}</p>
-                      {cliente.email && (
+                      {cliente.empresa ? (
                         <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
-                          <Mail className="h-3 w-3" /> {cliente.email}
+                          <Building className="h-3 w-3" /> {cliente.empresa}
                         </p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground/50 truncate">—</p>
                       )}
                     </div>
 
-                    {/* Empresa */}
-                    <div className="hidden md:block min-w-0">
-                      {cliente.empresa ? (
-                        <p className="text-sm truncate flex items-center gap-1.5">
-                          <Building className="h-3.5 w-3.5 text-muted-foreground shrink-0" /> {cliente.empresa}
+                    {/* Contacto */}
+                    <div className="hidden md:block min-w-0 space-y-0.5">
+                      {cliente.email ? (
+                        <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
+                          <Mail className="h-3 w-3" /> {cliente.email}
                         </p>
                       ) : (
-                        <p className="text-xs text-muted-foreground/50">—</p>
+                        <p className="text-xs text-muted-foreground/50">Sin email</p>
+                      )}
+                      {cliente.telefono ? (
+                        <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
+                          <Phone className="h-3 w-3" /> {cliente.telefono}
+                        </p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground/50">Sin teléfono</p>
                       )}
                     </div>
 
